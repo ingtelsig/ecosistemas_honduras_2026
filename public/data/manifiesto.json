@@ -2,8 +2,8 @@
   "edicion": "2026",
   "generado": "2026-11-17",
   "raster": {
-    "archivo": "Mapa_Ecosistemas_R26_30m.tif",
-    "sha256": "2063fdfd051eba3b2141d77e2b1d90ad9467e9be2b03d425205ccf4a5d0e475d",
+    "archivo": "Mapa_Ecosistemas_2026_30m.tif",
+    "sha256": "4c951fb15876e3c421ddf4616dba3ce50a884f50d75f6c5ed7aaff19123868aa",
     "celda_ha": 0.09
   },
   "fuentes": {
@@ -16,33 +16,48 @@
     "microcuencas": "ICF, microcuencas abastecedoras de agua declaradas por acuerdo (1.928 polígonos)",
     "limite_marino": "Limite_Territorio_Marino.shp"
   },
+  "ajuste_manglares": {
+    "origen": "Mapa_Ecosistemas_R26_30m.tif",
+    "destino": "Mapa_Ecosistemas_2026_30m.tif",
+    "corte_y_utm16n": 1600000,
+    "celdas": {
+      "6272->6271": 81,
+      "6261->6262": 16217,
+      "6271->6272": 124
+    },
+    "ha": {
+      "6272->6271": 7.29,
+      "6261->6262": 1459.53,
+      "6271->6272": 11.16
+    }
+  },
   "control_cruces_R26": {
     "areas_protegidas": {
       "unidades": 75,
       "ha_total": 3595572.72,
       "ha_total_cruces_R26": 3595572.72,
-      "pares_clase_unidad": 2689,
+      "pares_clase_unidad": 2676,
       "pares_cruces_R26": 2689,
-      "dif_max_ha": 0.0,
-      "pares_con_dif_mayor_0_1_ha": 0
+      "dif_max_ha": 765.45,
+      "pares_con_dif_mayor_0_1_ha": 26
     },
     "departamentos": {
       "unidades": 18,
       "ha_total": 11169459.72,
       "ha_total_cruces_R26": 11169459.72,
-      "pares_clase_unidad": 1356,
+      "pares_clase_unidad": 1350,
       "pares_cruces_R26": 1356,
-      "dif_max_ha": 0.0,
-      "pares_con_dif_mayor_0_1_ha": 0
+      "dif_max_ha": 27.09,
+      "pares_con_dif_mayor_0_1_ha": 12
     },
     "municipios": {
       "unidades": 298,
       "ha_total": 11141525.43,
       "ha_total_cruces_R26": 11141525.43,
-      "pares_clase_unidad": 14044,
+      "pares_clase_unidad": 14025,
       "pares_cruces_R26": 14044,
-      "dif_max_ha": 0.0,
-      "pares_con_dif_mayor_0_1_ha": 0
+      "dif_max_ha": 26.01,
+      "pares_con_dif_mayor_0_1_ha": 34
     },
     "microcuencas": {
       "unidades": 1928,

@@ -247,7 +247,7 @@ export function crearPDF(d: DatosReporte): jsPDF {
   const capaFuente =
     d.capaNombre === "Área protegida" ? fuente("areas_protegidas") : d.capaNombre === "Pueblo indígena o afrohondureño" ? fuente("pueblos_indigenas") : d.capaNombre === "Departamento" ? fuente("departamentos") : d.capaNombre === "Municipio" ? fuente("municipios") : d.capaNombre === "Cuenca hidrográfica" ? fuente("cuencas") : d.capaNombre === "Subcuenca hidrográfica" ? fuente("subcuencas") : d.capaNombre === "Microcuenca declarada" ? fuente("microcuencas") : "";
   const notas = [
-    `Superficies medidas sobre el ráster maestro del Mapa de Ecosistemas de Honduras 2026 (archivo ${man.raster.archivo}), celdas de 30 × 30 m (0,09 ha) en EPSG:32616. Una celda pertenece a la unidad cuando su centro cae dentro del límite.`,
+    `Superficies medidas sobre el ráster maestro del Mapa de Ecosistemas de Honduras 2026 (archivo ${man.raster.archivo}), celdas de 30 × 30 m (0,09 ha) en EPSG:32616. Los manglares están ajustados por costa: las celdas de manglar del Golfo de Fonseca llevan las clases del Pacífico (6262, 6272) y las de la costa norte las del Caribe (6261, 6271). Una celda pertenece a la unidad cuando su centro cae dentro del límite.`,
     "Son superficies cartográficas. Los totales nacionales oficiales aplican un ajuste proporcional por dominio (tierra 11.277.700 ha; mar 21.027.713,75 ha) que no se reparte por unidad, por lo que pueden diferir ligeramente de las cifras de este reporte.",
     "Clases y correspondencias GET-UICN según el catálogo oficial del Mapa de Ecosistemas 2026 (115 clases, 14 grupos nacionales).",
     capaFuente ? `Límites de la unidad: ${capaFuente}.` : "",

@@ -39,7 +39,7 @@ R26 = Path(os.environ.get("ECOSYSTEMS_R26_DIR", APP.parent / "Entrega_final_R26"
 TERR = Path(os.environ.get("TERRITORIOS_GPKG", "I:/Catalogo_Ecologico_Honduras_V004/01_base_datos/territorios.gpkg"))
 PUEBLOS = Path(os.environ.get("PUEBLOS_SHP", AQUI / "fuentes" / "pueblos_indigenas" / "Pueblos indigenas.shp"))
 MARINO = Path(os.environ.get("LIMITE_MARINO", "D:/web_GPT_proyectos/informe_mapa_ecosistemas/capas_base/Marino/Limite_Territorio_Marino.shp"))
-TIF = R26 / "Geodatos" / "Mapa_Ecosistemas_R26_30m.tif"
+TIF = Path(os.environ.get("RASTER_2026", AQUI / "raster" / "Mapa_Ecosistemas_2026_30m.tif"))  # ráster R26 con el ajuste de manglares (00_ajuste_manglares.py)
 QML = R26 / "Geodatos" / "Mapa_Ecosistemas_R26_30m.qml"
 OUT = APP / "public" / "data"
 HA = 0.09
@@ -96,6 +96,20 @@ def catalogo_clases() -> dict:
             "ha_ajustada": round(float(r["total_ajustado_ha"]), 2),
             "ha_cartografiada": round(float(r["R26_cartografiada_ha"]), 2),
         })
+    # Ajuste de manglares por costa (00_ajuste_manglares.py): se mueven las hectáreas cartografiadas entre clases y la
+    # superficie ajustada se escala en la misma proporción
+    aj = json.loads((AQUI / "ajuste_manglares.json").read_text(encoding="utf-8"))
+    por = {k["codigo"]: k for k in clases}
+    delta = defaultdict(float)
+    for par, ha in aj["ha"].items():
+        de, a = map(int, par.split("->"))
+        delta[de] -= ha
+        delta[a] += ha
+    for c, d in delta.items():
+        k = por[c]
+        nueva = k["ha_cartografiada"] + d
+        k["ha_ajustada"] = round(k["ha_ajustada"] * nueva / k["ha_cartografiada"], 2)
+        k["ha_cartografiada"] = round(nueva, 2)
     assert len(clases) == 115 and all(k["color"] for k in clases)
     grupos = [{"codigo": r["codigo"], "nombre": r["nombre"]} for r in niv if r["nivel"] == "G" and r["codigo"] != "TOTAL"]
     get = {lv: {r["codigo"]: r["nombre"] for r in niv if r["nivel"] == lv and r["codigo"] != "TOTAL"} for lv in ("GET_L1", "GET_L2", "GET_L3")}
@@ -325,6 +339,7 @@ def main() -> None:
             "microcuencas": "ICF, microcuencas abastecedoras de agua declaradas por acuerdo (1.928 polígonos)",
             "limite_marino": MARINO.name,
         },
+        "ajuste_manglares": json.loads((AQUI / "ajuste_manglares.json").read_text(encoding="utf-8")),
         "control_cruces_R26": control,
     }
     previo = OUT / "manifiesto.json"

@@ -331,6 +331,7 @@ function construirAcerca() {
     <h3>Fuentes</h3>
     <ul>
       <li>Ecosistemas: ${esc(E.man.raster.archivo)} (sha256 ${E.man.raster.sha256.slice(0, 12)}…).</li>
+      <li>Manglares ajustados por costa: 1.459,5 ha de manglar alto (6261 → 6262) y 11,2 ha de manglar bajo (6271 → 6272) del Golfo de Fonseca pasan a las clases del Pacífico, y 7,3 ha de la costa norte (6272 → 6271) a la del Caribe. El ráster entregado no cambia.</li>
       <li>Áreas protegidas: ${esc(f.areas_protegidas ?? "")}.</li>
       <li>Departamentos y municipios: ${esc(f.municipios ?? "")}.</li>
       <li>Pueblos indígenas y afrohondureños: ${esc(f.pueblos_indigenas ?? "")}. La superficie se mide solo dentro del mapa 2026 (territorio y espacio marino de Honduras).</li>

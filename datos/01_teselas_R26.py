@@ -34,7 +34,7 @@ from rasterio.windows import Window
 AQUI = Path(__file__).resolve().parent
 APP = AQUI.parent
 R26 = Path(os.environ.get("ECOSYSTEMS_R26_DIR", APP.parent / "Entrega_final_R26"))
-TIF = R26 / "Geodatos" / "Mapa_Ecosistemas_R26_30m.tif"
+TIF = Path(os.environ.get("RASTER_2026", AQUI / "raster" / "Mapa_Ecosistemas_2026_30m.tif"))  # ráster R26 con el ajuste de manglares (00_ajuste_manglares.py)
 QML = R26 / "Geodatos" / "Mapa_Ecosistemas_R26_30m.qml"
 SALIDA = APP / "public" / "data" / "ecosistemas_R26.pmtiles"
 TMP = APP / "datos" / "_tmp"

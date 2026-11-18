@@ -7,3 +7,4 @@ datos/_log_*.txt
 # no se publican
 datos/fuentes/
 .claude/
+datos/raster/

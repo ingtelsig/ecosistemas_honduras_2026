@@ -293,8 +293,34 @@ def revisar(d: dict) -> dict:
         nuevos = [{"t": "h2", "x": TITULO, "revision": True}, {"t": "nota", "h": FUENTE, "revision": True}, *nuevos]
         k = next((i for i, b in enumerate(bs) if b["t"] == "h2" and b.get("x", "").startswith("Referencias")), len(bs))
         bs[k:k] = nuevos
+    if cod in MANGLARES:
+        bs.insert(0, {"t": "nota", "h": nota_manglar(cod), "revision": True})
     d["bloques"] = bs
     return d
+
+
+# ------------------------------------------------------------------ 3. ajuste de manglares por costa (00_ajuste_manglares.py)
+MANGLARES = (6261, 6262, 6271, 6272)
+
+
+def nota_manglar(cod: int) -> str:
+    datos = FICHAS.parent
+    aj = json.loads((Path(__file__).resolve().parent / "ajuste_manglares.json").read_text(encoding="utf-8"))["ha"]
+    clase = next(c for c in json.loads((datos / "clases.json").read_text(encoding="utf-8"))["clases"] if c["codigo"] == cod)
+    fmt = lambda x: f"{x:,.2f}".replace(",", " ").replace(".", ",").replace(" ", ".")
+    mov = []
+    for par, ha in aj.items():
+        de, a = map(int, par.split("->"))
+        if cod == de:
+            mov.append(f"pasan {fmt(ha)} ha a la clase {a}")
+        elif cod == a:
+            mov.append(f"recibe {fmt(ha)} ha de la clase {de}")
+    return ("<b>Ajuste por costa (2026).</b> En el ráster entregado algunas celdas de manglar quedaron con la clase de la "
+            "otra costa (manglar «del Caribe» en el Golfo de Fonseca y «del Pacífico» en la costa norte). El geovisor las "
+            "asigna a la clase de su costa sin cambiar la estructura (alto y denso / bajo y enano): en esta unidad "
+            f"{' y '.join(mov)}. Superficie cartografiada actualizada: <b>{fmt(clase['ha_cartografiada'])} ha</b> "
+            f"({fmt(clase['ha_ajustada'])} ha ajustadas). El mapa de distribución ya muestra el ajuste; las cifras de la "
+            "monografía corresponden al ráster entregado.")
 
 
 if __name__ == "__main__":
