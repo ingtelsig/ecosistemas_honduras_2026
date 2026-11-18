@@ -1,0 +1,45 @@
+{
+  "edicion": "R26",
+  "generado": "2026-11-17",
+  "raster": {
+    "archivo": "Mapa_Ecosistemas_R26_30m.tif",
+    "sha256": "2063fdfd051eba3b2141d77e2b1d90ad9467e9be2b03d425205ccf4a5d0e475d",
+    "celda_ha": 0.09
+  },
+  "fuentes": {
+    "areas_protegidas": "ICF, Geoportal: áreas protegidas declaradas del SINAPH (75 áreas, 324 zonas; fecha de creación más reciente 2025-02-17)",
+    "departamentos": "OCHA/HDX, límites administrativos de Honduras, a partir de SINIT/SEPLAN 2010 (CC BY-IGO)",
+    "municipios": "OCHA/HDX, límites administrativos de Honduras, a partir de SINIT/SEPLAN 2010 (CC BY-IGO)",
+    "pueblos_indigenas": "UICN-Honduras, capa de pueblos indígenas y afrohondureños (30 polígonos, campo ETNIA_1); los polígonos de un mismo pueblo se unen en una unidad",
+    "limite_marino": "Limite_Territorio_Marino.shp"
+  },
+  "control_cruces_R26": {
+    "areas_protegidas": {
+      "unidades": 75,
+      "ha_total": 3595572.72,
+      "ha_total_cruces_R26": 3595572.72,
+      "pares_clase_unidad": 2689,
+      "pares_cruces_R26": 2689,
+      "dif_max_ha": 0.0,
+      "pares_con_dif_mayor_0_1_ha": 0
+    },
+    "departamentos": {
+      "unidades": 18,
+      "ha_total": 11169459.72,
+      "ha_total_cruces_R26": 11169459.72,
+      "pares_clase_unidad": 1356,
+      "pares_cruces_R26": 1356,
+      "dif_max_ha": 0.0,
+      "pares_con_dif_mayor_0_1_ha": 0
+    },
+    "municipios": {
+      "unidades": 298,
+      "ha_total": 11141525.43,
+      "ha_total_cruces_R26": 11141525.43,
+      "pares_clase_unidad": 14044,
+      "pares_cruces_R26": 14044,
+      "dif_max_ha": 0.0,
+      "pares_con_dif_mayor_0_1_ha": 0
+    }
+  }
+}

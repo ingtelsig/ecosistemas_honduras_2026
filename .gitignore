@@ -1,0 +1,9 @@
+node_modules/
+dist/
+datos/_tmp/
+datos/_log_*.txt
+.npm-cache/
+
+# no se publican
+datos/fuentes/
+.claude/

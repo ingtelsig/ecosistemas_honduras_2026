@@ -1,0 +1,20 @@
+{
+  "_nota": "Nombres ajustados en el geovisor. Estas clases no se distinguen de sus pares 'estacionales' (12xx, 8122-8123) por el clima (misma elevación y lluvia), sino por su mayor deciduidad (cambio estacional EVI2 ~0,30-0,33 frente a ~0,20). Por eso 'seco' se sustituye por 'estacional (semideciduo a deciduo)'. Los códigos y superficies R26 no cambian.",
+  "1322": "Bosque latifoliado estacional (semideciduo a deciduo), submontano, aluvial o mal drenado",
+  "1323": "Bosque latifoliado estacional (semideciduo a deciduo), submontano, moderadamente drenado",
+  "1324": "Bosque latifoliado estacional (semideciduo a deciduo), submontano, bien drenado",
+  "1332": "Bosque latifoliado estacional (semideciduo a deciduo), montano / altimontano, aluvial o mal drenado",
+  "1333": "Bosque latifoliado estacional (semideciduo a deciduo), montano / altimontano, moderadamente drenado",
+  "1334": "Bosque latifoliado estacional (semideciduo a deciduo), montano / altimontano, bien drenado",
+  "8132": "Sistema agroforestal cafetalero en clima estacional (entorno semideciduo a deciduo), submontano",
+  "8133": "Sistema agroforestal cafetalero en clima estacional (entorno semideciduo a deciduo), montano / altimontano",
+  "colores": {
+    "_nota": "Colores ajustados en el geovisor: verdes oliva cercanos a los del bosque estacional / semideciduo (1222-1224 y 1232-1234) en lugar de los ocres del bosque seco.",
+    "1332": "#6e9a3c",
+    "1333": "#7fab45",
+    "1334": "#90bb52",
+    "1322": "#6f741e",
+    "1323": "#878b22",
+    "1324": "#a0a42a"
+  }
+}

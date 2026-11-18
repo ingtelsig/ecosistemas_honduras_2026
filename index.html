@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Ecosistemas de Honduras R26</title>
+    <meta name="description" content="Geovisor del Mapa de Ecosistemas de Honduras R26 con resúmenes y reportes PDF por área protegida, departamento y municipio." />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%231d5e22'/%3E%3Cpath d='M8 24c4-10 12-14 16-16-2 6-6 14-16 16z' fill='%23d8a94e'/%3E%3C/svg%3E" />
+  </head>
+  <body>
+    <a class="saltar" href="#panel">Ir al panel</a>
+    <header class="cabecera">
+      <div>
+        <h1>Ecosistemas de Honduras</h1>
+        <p>Mapa nacional R26 · 115 clases a 30 m</p>
+      </div>
+      <button id="btn-panel" class="btn-icono solo-movil" aria-controls="panel" aria-expanded="true" title="Mostrar u ocultar el panel">☰</button>
+    </header>
+    <main class="principal">
+      <aside id="panel" class="panel" aria-label="Filtros y resumen">
+        <div class="pestanas" role="tablist">
+          <button role="tab" id="tab-unidades" aria-selected="true" aria-controls="vista-unidades">Unidades</button>
+          <button role="tab" id="tab-clases" aria-selected="false" aria-controls="vista-clases">Clases</button>
+          <button role="tab" id="tab-catalogo" aria-selected="false" aria-controls="vista-catalogo">Catálogo</button>
+          <button role="tab" id="tab-acerca" aria-selected="false" aria-controls="vista-acerca">Acerca de</button>
+        </div>
+
+        <section id="vista-unidades" role="tabpanel" aria-labelledby="tab-unidades">
+          <fieldset class="capas">
+            <legend>Unidad de reporte</legend>
+            <div id="selector-capas" class="segmentos"></div>
+          </fieldset>
+          <div id="filtro-depto" class="campo" hidden>
+            <label for="sel-depto">Departamento</label>
+            <select id="sel-depto"></select>
+          </div>
+          <div class="campo">
+            <label for="buscar">Buscar</label>
+            <input id="buscar" type="search" placeholder="Nombre de la unidad" autocomplete="off" />
+          </div>
+          <p id="lista-filtro" class="lista-filtro" hidden></p>
+          <ul id="lista" class="lista" aria-label="Unidades"></ul>
+          <div id="resumen" class="resumen" aria-live="polite"></div>
+        </section>
+
+        <section id="vista-clases" role="tabpanel" aria-labelledby="tab-clases" hidden>
+          <div class="fila-acciones">
+            <button id="clases-todas" class="btn">Todas</button>
+            <button id="clases-ninguna" class="btn">Ninguna</button>
+            <button id="clases-presentes" class="btn" disabled title="Seleccione primero una unidad">Solo de la unidad</button>
+          </div>
+          <div class="campo">
+            <label for="opacidad">Opacidad del mapa de ecosistemas</label>
+            <input id="opacidad" type="range" min="0.2" max="1" step="0.05" value="0.9" />
+          </div>
+          <div id="arbol-clases" class="arbol"></div>
+        </section>
+
+        <section id="vista-catalogo" role="tabpanel" aria-labelledby="tab-catalogo" hidden>
+          <p class="nota">Fichas monográficas de las 115 unidades ecosistémicas del Catálogo R26. También se abren con el botón <span class="info" aria-hidden="true">i</span> junto al nombre de cada clase.</p>
+          <div class="campo">
+            <label for="buscar-ficha">Buscar ficha</label>
+            <input id="buscar-ficha" type="search" placeholder="Código o nombre de la unidad" autocomplete="off" />
+          </div>
+          <div id="lista-catalogo"></div>
+        </section>
+
+        <section id="vista-acerca" role="tabpanel" aria-labelledby="tab-acerca" hidden>
+          <div id="acerca" class="texto"></div>
+        </section>
+      </aside>
+      <div class="mapa-contenedor">
+        <div id="mapa" role="region" aria-label="Mapa de ecosistemas"></div>
+        <div id="aviso" class="aviso" hidden></div>
+      </div>
+      <aside id="leyenda" class="leyenda plegada" aria-label="Leyenda según la Tipología Global de Ecosistemas">
+        <div class="ley-cab">
+          <button id="btn-leyenda" class="ley-plegar" type="button" aria-expanded="false" aria-controls="ley-cuerpo" title="Plegar o desplegar la leyenda">
+            <span class="flecha" aria-hidden="true">›</span><span class="ley-titulo">Leyenda</span>
+          </button>
+        </div>
+        <div id="ley-cuerpo" class="ley-cuerpo">
+          <div class="segmentos ley-modos" role="group" aria-label="Jerarquía de la leyenda">
+            <button type="button" data-modo="grupos" aria-pressed="false">Grupos nacionales</button>
+            <button type="button" data-modo="get" aria-pressed="true">GET-UICN</button>
+          </div>
+          <p class="ley-ayuda" data-para="grupos" hidden>Grupo nacional › clase nacional. Las casillas muestran u ocultan clases en el mapa.</p>
+          <p class="ley-ayuda" data-para="get">Reino › Bioma › Grupo funcional (EFG) › clase nacional. Las casillas muestran u ocultan clases en el mapa.</p>
+          <button id="ley-todo" class="btn primario ley-todo" type="button">Desactivar todo</button>
+          <label class="ley-solo"><input type="checkbox" id="ley-solo" disabled /> Solo clases de la unidad seleccionada</label>
+          <div class="fila-acciones">
+            <button id="ley-expandir" class="btn" type="button">Expandir todo</button>
+            <button id="ley-contraer" class="btn" type="button">Contraer</button>
+          </div>
+          <div id="arbol-grupos" class="arbol arbol-get" data-para="grupos" hidden></div>
+          <div id="arbol-get" class="arbol arbol-get" data-para="get"></div>
+          <p class="ley-nota" data-para="get"><b>Varios … · pendiente de reparto</b>: la clase corresponde a más de una rama en ese nivel (MULT). <b>Relación contextual</b>: la clase 635 (relieve submarino) se muestra bajo M3.4 como referencia, sin membresía; en las superficies R26 figura como «Sin correspondencia de membresía».</p>
+        </div>
+      </aside>
+    </main>
+    <dialog id="ficha" class="ficha" aria-labelledby="ficha-titulo">
+      <div class="f-barra">
+        <button type="button" class="btn" data-nav="-1" title="Ficha anterior (←)">‹ Anterior</button>
+        <button type="button" class="btn" data-nav="1" title="Ficha siguiente (→)">Siguiente ›</button>
+        <button type="button" class="btn" data-solo title="Mostrar solo esta clase en el mapa">Ver solo en el mapa</button>
+        <button type="button" class="btn-cerrar" data-cerrar aria-label="Cerrar la ficha">×</button>
+      </div>
+      <div id="ficha-cuerpo" class="f-cuerpo"></div>
+    </dialog>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
