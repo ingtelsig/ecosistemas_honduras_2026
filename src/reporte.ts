@@ -209,7 +209,7 @@ export function crearPDF(d: DatosReporte): jsPDF {
     "Clases presentes por grupo nacional",
     "Grupo nacional › unidad ecosistémica. Los porcentajes se expresan sobre la superficie total de la unidad.",
     "GET L3",
-    (f) => f.clase.get3,
+    (f) => f.clase.get3 + (f.clase.alt.length ? ` (o ${f.clase.alt.join(", ")})` : ""),
     filasG,
   );
 
@@ -225,13 +225,13 @@ export function crearPDF(d: DatosReporte): jsPDF {
       for (const [k3, cl] of efgs) {
         const fs3 = cl.map((c) => porCodigo.get(c.codigo)!);
         const ctx = cl.some((c) => rutaGET(c)[3]);
-        filasT.push(cab(2, `${k3 === "MULT" ? "" : k3 + " · "}${nombreGET(cat, 2, k3)}${ctx ? " (relación contextual, sin membresía)" : ""}`, fs3), ...porHa(fs3));
+        filasT.push(cab(2, `${k3 === "MULT" ? "" : k3 + " · "}${nombreGET(cat, 2, k3)}${ctx ? " (relación contextual)" : ""}`, fs3), ...porHa(fs3));
       }
     }
   }
   tablaJerarquica(
     "Clases presentes por jerarquía GET-UICN",
-    "Reino › Bioma › Grupo funcional (EFG) › unidad ecosistémica. Las clases con varias correspondencias figuran en «Varios» (pendiente de reparto); la 635 se muestra bajo M3.4 como relación contextual.",
+    "Reino › Bioma › Grupo funcional (EFG) › unidad ecosistémica. Cada clase figura en su clase GET-UICN principal (la más probable); la columna de la primera tabla indica también los otros EFG posibles. La 635 está bajo M3.4 por relación contextual (geoforma).",
     "Grupo",
     (f) => f.clase.grupo,
     filasT,

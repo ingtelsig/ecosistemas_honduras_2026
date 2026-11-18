@@ -76,6 +76,7 @@ def catalogo_clases() -> dict:
     sup = leer_csv(R26 / "Clasificacion" / "Superficies_ajustadas_R26_por_codigo.csv")
     niv = leer_csv(R26 / "Clasificacion" / "Superficies_ajustadas_R26_por_nivel.csv")
     nombre = {(r["nivel"], r["codigo"]): r["nombre"] for r in niv}
+    princ = {int(r["codigo"]): r for r in leer_csv(R26 / "Clasificacion" / "GET_principal_R26.csv")}
     corr = defaultdict(list)
     for r in leer_csv(R26 / "Clasificacion" / "Correspondencias_nacionales_GET_UICN_R26.csv"):
         corr[int(r["class_id"])].append([r["EFG"], r["EFG_nombre_es"], r["es_principal"] == "True"])
@@ -90,7 +91,12 @@ def catalogo_clases() -> dict:
             "codigo": c,
             "nombre": ajuste.get(c, r["unidad_nacional"]),
             "grupo": r["grupo_nacional"],
-            "get1": r["GET_L1"], "get2": r["GET_L2"], "get3": r["GET_L3"],
+            # Clase GET-UICN principal (más probable); la regla estricta R25 (MULT / SIN_GET) queda en «estricto»
+            "get1": r["GET_L1_principal"], "get2": r["GET_L2_principal"], "get3": r["GET_L3_principal"],
+            "estricto": [r["GET_L1"], r["GET_L2"], r["GET_L3"]],
+            "alt": [x.strip() for x in r["GET_L3_alternativas"].split(";") if x.strip()],
+            "criterio": princ.get(c, {}).get("criterio_principal", ""),
+            "criterios_alt": princ.get(c, {}).get("criterios_alternativas", ""),
             "color": color[c],
             "efg": corr.get(c, []),
             "ha_ajustada": round(float(r["total_ajustado_ha"]), 2),
@@ -99,6 +105,13 @@ def catalogo_clases() -> dict:
     assert len(clases) == 115 and all(k["color"] for k in clases)
     grupos = [{"codigo": r["codigo"], "nombre": r["nombre"]} for r in niv if r["nivel"] == "G" and r["codigo"] != "TOTAL"]
     get = {lv: {r["codigo"]: r["nombre"] for r in niv if r["nivel"] == lv and r["codigo"] != "TOTAL"} for lv in ("GET_L1", "GET_L2", "GET_L3")}
+    # Nombres de códigos GET que solo aparecen como principal o alternativa
+    for r in leer_csv(R26 / "Clasificacion" / "Correspondencias_nacionales_GET_UICN_R26.csv"):
+        get["GET_L3"].setdefault(r["EFG"], r["EFG_nombre_es"])
+    for r in princ.values():
+        get["GET_L3"].setdefault(r["GET_L3_principal"], r["EFG_principal_nombre"])
+    faltan = {(lv, k[f]) for k in clases for lv, f in (("GET_L1", "get1"), ("GET_L2", "get2"), ("GET_L3", "get3")) if k[f] not in get[lv]}
+    assert not faltan, faltan
     return {"edicion": "2026", "clases": clases, "grupos": grupos, "get": get}
 
 

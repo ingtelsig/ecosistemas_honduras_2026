@@ -7,6 +7,13 @@ export interface Clase {
   get1: string;
   get2: string;
   get3: string;
+  /** Regla estricta R25 (L1–L3): MULT con varias membresías, SIN_GET con relación solo contextual. */
+  estricto: [string, string, string];
+  /** Otros EFG (L3) a los que también puede pertenecer la clase. */
+  alt: string[];
+  /** Criterio de la asignación principal y de cada alternativa ("" si la membresía es única). */
+  criterio: string;
+  criterios_alt: string;
   color: string;
   efg: [string, string, boolean][];
   ha_ajustada: number;

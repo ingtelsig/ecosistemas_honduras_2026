@@ -6,7 +6,7 @@ import { capturar, crearMapa, encuadrar, limites, mostrarCapa, refrescarEcosiste
 import { claseDe, colorDeGrupo, csv, descargar, resumir, slug, unidadNacional, type Resumen } from "./resumen";
 import { codigoEn, fijarColores, registrarProtocolo } from "./teselas";
 import { capaActiva, criteriosEn, iniciarComparacion, registrarProtocoloComparacion, valorEn } from "./comparar";
-import { htmlGrupos, htmlLeyenda } from "./leyenda";
+import { htmlGrupos, htmlLeyenda, nombreGET } from "./leyenda";
 import { actualizarUnidadFicha, botonInfo, htmlCatalogo, iniciarFichas } from "./fichas";
 
 const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -442,7 +442,7 @@ function enlazarEventos() {
     const html = `${
       c
         ? `<div class="pop-clase"><i style="background:${c.color}"></i><div><b>${c.codigo} · ${esc(c.nombre)}</b> ${botonInfo(c)}
-           <small>Grupo ${c.grupo} · GET ${esc(c.get3)}${c.efg.length ? " · " + esc(c.efg.filter((x) => x[2]).map((x) => `${x[0]} ${x[1]}`).join("; ") || esc(c.efg[0][0])) : ""}</small></div></div>`
+           <small>Grupo ${c.grupo} · GET ${esc(c.get3)} ${esc(nombreGET(E.cat, 2, c.get3))}${c.alt.length ? ` (también ${esc(c.alt.join(", "))})` : ""}</small></div></div>`
         : `<p class="pop-vacio">Sin clase de ecosistema en este punto.</p>`
     }${act ? `<p class="pop-cmp"><span>${esc(act.nombre)}:</span> ${vAct ? `${vAct.color ? `<i style="background:${vAct.color}"></i>` : ""}<b>${esc(vAct.texto)}</b>` : "sin dato"}</p>` : ""}<p class="pop-crit"><button class="btn enlace" data-criterios>Ver criterios ecológicos en este punto</button></p><div class="pop-crit-tabla"></div>${nomU ? `<p class="pop-unidad">${esc(nomU)} <button class="btn enlace" data-ver="${esc(String(f!.properties!.id))}">Ver resumen</button></p>` : ""}`;
     popup?.remove();

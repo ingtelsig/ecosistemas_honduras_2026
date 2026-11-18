@@ -30,8 +30,8 @@ export interface Resumen {
 }
 
 const NOMBRE_ESPECIAL: Record<string, string> = {
-  MULT: "Asignación múltiple (pendiente de reparto entre EFG)",
-  SIN_GET: "Sin correspondencia GET",
+  MULT: "Asignación múltiple (regla estricta R25)",
+  SIN_GET: "Sin correspondencia de membresía (regla estricta R25)",
 };
 
 let indice: Map<number, Clase> | null = null;
@@ -105,9 +105,9 @@ export function unidadNacional(cat: Catalogo): Unidad {
 
 export function csv(r: Resumen, capa: string, cat: Catalogo): string {
   const q = (s: string) => `"${s.replace(/"/g, '""')}"`;
-  const filas = [["capa", "unidad_id", "unidad", "codigo", "clase", "grupo", "GET_L1", "GET_L2", "GET_L3", "GET_L1_categorias", "GET_L2_categorias", "GET_L3_categorias", "hectareas_30m", "porcentaje_unidad"].join(",")];
+  const filas = [["capa", "unidad_id", "unidad", "codigo", "clase", "grupo", "GET_L1_principal", "GET_L2_principal", "GET_L3_principal", "GET_L1_nombre", "GET_L2_nombre", "GET_L3_nombre", "GET_L3_alternativas", "GET_L3_estricto_R25", "criterio_GET_principal", "hectareas_30m", "porcentaje_unidad"].join(",")];
   for (const f of r.clases) {
-    filas.push([q(capa), q(r.unidad.id), q(r.unidad.nombre), f.codigo, q(f.nombre), f.clase.grupo, f.clase.get1, f.clase.get2, f.clase.get3, ...([0, 1, 2] as const).map((n) => q(detalleGET(cat, f.clase, n))), f.ha.toFixed(2), f.pct.toFixed(4)].join(","));
+    filas.push([q(capa), q(r.unidad.id), q(r.unidad.nombre), f.codigo, q(f.nombre), f.clase.grupo, f.clase.get1, f.clase.get2, f.clase.get3, ...([0, 1, 2] as const).map((n) => q(detalleGET(cat, f.clase, n))), q(f.clase.alt.join("; ")), f.clase.estricto[2], q(f.clase.criterio), f.ha.toFixed(2), f.pct.toFixed(4)].join(","));
   }
   return "﻿" + filas.join("\r\n");
 }

@@ -1,6 +1,6 @@
 // Leyendas jerárquicas: por grupo nacional y por GET-UICN (Reino › Bioma › Grupo funcional (EFG) › clase nacional).
-// GET sigue la regla de 2026: una clase cuelga de una rama solo con membresía única en ese nivel.
-// Si tiene varias membresías queda en «MULT», y si solo tiene una relación contextual, en «SIN_GET».
+// Cada clase cuelga de su clase GET-UICN principal (la más probable; Clasificacion/GET_principal_R26.csv) y muestra
+// las otras a las que también puede pertenecer. La regla estricta R25 (MULT / SIN_GET) se conserva en `estricto`.
 import type { Catalogo, Clase } from "./datos";
 import { botonInfo } from "./fichas";
 
@@ -35,24 +35,20 @@ export function categoriasGET(c: Clase, nivel: 0 | 1 | 2): string[] {
   return [...new Set(cods)];
 }
 
-/** «T4.2 Sabanas… | T1.3 Bosques…»: categorías incluidas en un nivel MULT (o la única, si no lo es). */
+/** «T1.2 Bosques secos…»: código y nombre de la clase principal en el nivel. */
 export function detalleGET(cat: Catalogo, c: Clase, nivel: 0 | 1 | 2): string {
   const cod = [c.get1, c.get2, c.get3][nivel];
-  const cods = cod === "MULT" ? categoriasGET(c, nivel) : [cod];
-  return cods.map((k) => (k === "SIN_GET" ? nombreGET(cat, nivel, k) : `${k} ${nombreGET(cat, nivel, k)}`)).join(" | ");
+  return `${cod} ${nombreGET(cat, nivel, cod)}`;
 }
 
-/**
- * Ruta de la clase en el árbol GET. Las clases sin membresía (SIN_GET) con una sola relación contextual se muestran
- * bajo ese EFG, marcadas como contextuales. Las cifras de resúmenes y reportes siguen la tabla 2026 (SIN_GET).
- */
+/** «T1.1, T1.3» con el nombre de cada EFG en el título. */
+export function altHTML(cat: Catalogo, c: Clase): string {
+  return c.alt.map((k) => `<abbr title="${esc(nombreGET(cat, 2, k))}">${esc(k)}</abbr>`).join(", ");
+}
+
+/** Ruta principal de la clase en el árbol GET; el 4.º valor indica asignación por relación contextual (635). */
 export function rutaGET(c: Clase): [string, string, string, boolean] {
-  if (c.get1 === "SIN_GET" && c.efg.length === 1) {
-    const efg = c.efg[0][0]; // p. ej. "M3.4"
-    const bioma = efg.split(".")[0]; // "M3"
-    return [bioma.replace(/\d+$/, ""), bioma, efg, true];
-  }
-  return [c.get1, c.get2, c.get3, false];
+  return [c.get1, c.get2, c.get3, c.estricto[2] === "SIN_GET"];
 }
 
 export type ArbolGET = Map<string, Map<string, Map<string, Clase[]>>>;
@@ -70,16 +66,17 @@ export function arbolGET(clases: Clase[]): ArbolGET {
   return ord(new Map([...a].map(([k1, b]) => [k1, ord(new Map([...b].map(([k2, e]) => [k2, ord(e)])))])));
 }
 
-function claseLi(c: Clase, nivelMult: -1 | 0 | 1 | 2 = -1): string {
+function claseLi(c: Clase, conAlt = false): string {
   const contextual = rutaGET(c)[3];
-  const mult = nivelMult >= 0 ? categoriasGET(c, nivelMult as 0 | 1 | 2) : [];
-  const rel = c.efg.map((e) => `${e[0]} ${e[1]}${e[2] ? " (principal)" : ""}`).join("\n");
-  const titulo = contextual
-    ? `Relación contextual con ${rel}. No es membresía: en las superficies del mapa 2026 figura como «Sin correspondencia de membresía».`
-    : rel ? `Correspondencias EFG:\n${rel}` : "";
+  const rel = c.efg.map((e) => `${e[0]} ${e[1]}${e[0] === c.get3 ? " (principal)" : ""}`).join("\n");
+  const titulo = [
+    contextual ? "Asignación por relación contextual (geoforma), no por membresía funcional verificada." : "",
+    c.criterio ? `Criterio de la clase principal ${c.get3}: ${c.criterio}.` : "",
+    rel ? `Correspondencias EFG:\n${rel}` : "",
+  ].filter(Boolean).join("\n");
   return `<li data-li="${c.codigo}" class="${contextual ? "contextual" : ""}" title="${esc(titulo)}"><label><input type="checkbox" data-clase="${c.codigo}" checked>
     <i style="background:${c.color}"></i><span><b>${c.codigo}</b> ${esc(c.nombre)}${contextual ? ' <em class="marca-ctx">relación contextual</em>' : ""}${
-      mult.length ? `<small class="mult-incl">Incluye: ${mult.map((k) => `<abbr title="${esc(nombreGET(catActual!, nivelMult as 0 | 1 | 2, k))}">${esc(k)}</abbr>`).join(", ")}</small>` : ""
+      conAlt && c.alt.length ? `<small class="mult-incl">También puede corresponder a: ${altHTML(catActual!, c)}</small>` : ""
     }</span></label>${botonInfo(c)}</li>`;
 }
 
@@ -100,13 +97,10 @@ export function htmlGrupos(cat: Catalogo, colorGrupo: (g: string) => string): st
 
 export function htmlLeyenda(cat: Catalogo): string {
   catActual = cat;
-  // En un nodo MULT, la lista de categorías que reúnen sus clases
-  const incl = (nivel: 0 | 1 | 2, cod: string, clases: Clase[]) =>
-    cod === "MULT" ? ` (${[...new Set(clases.flatMap((c) => categoriasGET(c, nivel)))].sort(ordenarGET).join(", ")})` : "";
   const nodo = (nivel: 0 | 1 | 2, cod: string, clases: Clase[], interior: string, abierto: boolean) => `
     <details class="nodo n${nivel + 1}${especial(cod) ? " especial" : ""}"${abierto ? " open" : ""}>
       <summary><input type="checkbox" data-codigos="${clases.map((c) => c.codigo).join(",")}" checked aria-label="${esc(nombreGET(cat, nivel, cod))}">
-        <span class="cod">${cod === "SIN_GET" ? "—" : esc(cod)}</span><span class="nom">${esc(nombreGET(cat, nivel, cod))}${cod === "MULT" ? `<span class="mult-incl">${esc(incl(nivel, cod, clases))}</span>` : ""}</span><small>${clases.length}</small></summary>
+        <span class="cod">${cod === "SIN_GET" ? "—" : esc(cod)}</span><span class="nom">${esc(nombreGET(cat, nivel, cod))}</span><small>${clases.length}</small></summary>
       <div class="hijos">${interior}</div></details>`;
 
   return [...arbolGET(cat.clases)]
@@ -118,9 +112,7 @@ export function htmlLeyenda(cat: Catalogo): string {
           const html3 = [...efgs]
             .map(([k3, cl]) => {
               const cl3 = [...cl].sort((a, b) => a.codigo - b.codigo);
-              // La clase muestra las categorías del nivel más alto en que es MULT
-              const nivelMult = (c: Clase): -1 | 0 | 1 | 2 => (k1 === "MULT" ? 0 : k2 === "MULT" ? 1 : c.get3 === "MULT" && k3 === "MULT" ? 2 : -1);
-              return nodo(2, k3, cl3, `<ul>${cl3.map((c) => claseLi(c, nivelMult(c))).join("")}</ul>`, false);
+              return nodo(2, k3, cl3, `<ul>${cl3.map((c) => claseLi(c, true)).join("")}</ul>`, false);
             })
             .join("");
           return nodo(1, k2, cl2, html3, false);

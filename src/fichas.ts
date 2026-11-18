@@ -1,7 +1,7 @@
 // Catálogo de fichas monográficas por unidad ecosistémica (generadas por datos/03_fichas.py desde los catálogos 2026).
 import { ha, pct, url, type Catalogo, type Clase, type Unidad } from "./datos";
 import { claseDe } from "./resumen";
-import { categoriasGET, nombreGET, rutaGET } from "./leyenda";
+import { altHTML, nombreGET, rutaGET } from "./leyenda";
 
 interface Bloque {
   t: "h2" | "h3" | "p" | "li" | "nota" | "tabla";
@@ -118,11 +118,7 @@ export function actualizarUnidadFicha(u: Unidad | null) {
 function cabecera(c: Clase): string {
   const [g1, g2, g3, contextual] = rutaGET(c);
   const get = [g1, g2, g3]
-    .map((cod, i) => {
-      if (cod !== "MULT") return `<span title="${esc(nombreGET(ctx.cat, i as 0 | 1 | 2, cod))}">${esc(cod)}</span>`;
-      const k = categoriasGET(c, i as 0 | 1 | 2);
-      return `<span title="${esc(k.map((x) => `${x} ${nombreGET(ctx.cat, i as 0 | 1 | 2, x)}`).join("\n"))}">Varios (${esc(k.join(", "))})</span>`;
-    })
+    .map((cod, i) => `<span title="${esc(nombreGET(ctx.cat, i as 0 | 1 | 2, cod))}">${esc(cod)}</span>`)
     .join(" › ");
   const grupo = ctx.cat.grupos.find((g) => g.codigo === c.grupo);
   const u = ctx.unidad;
@@ -134,9 +130,9 @@ function cabecera(c: Clase): string {
       <div>
         <p class="f-sobre">Unidad ecosistémica ${c.codigo} · ${esc(c.grupo)} ${esc(grupo?.nombre ?? "")}</p>
         <h2 id="ficha-titulo">${esc(c.nombre)}</h2>
-        <p class="f-meta">GET-UICN: ${get}${contextual ? " · relación contextual" : ""}${
-          c.efg.length ? ` · ${c.efg.map((e) => `${e[0]}${e[2] ? " (principal)" : ""}`).join(", ")}` : ""
-        }</p>
+        <p class="f-meta">GET-UICN principal: ${get} ${esc(nombreGET(ctx.cat, 2, c.get3))}${contextual ? " · relación contextual" : ""}${
+          c.alt.length ? ` · también puede corresponder a ${altHTML(ctx.cat, c)}` : ""
+        }</p>${c.criterio ? `<p class="f-meta" title="${esc(c.criterios_alt.split(" | ").join("\n"))}">Criterio de asignación: ${esc(c.criterio)}.</p>` : ""}
         <p class="f-meta">Superficie nacional 2026: <b>${ha(c.ha_ajustada)} ha</b> ajustadas · ${ha(c.ha_cartografiada)} ha cartografiadas${
           u && enU ? ` · En ${esc(u.nombre)}: <b>${ha(enU[1])} ha</b> (${pct((100 * enU[1]) / totalU)})` : ""
         }</p>
