@@ -3,7 +3,7 @@
   "generado": "2026-11-18",
   "raster": {
     "archivo": "Mapa_Ecosistemas_R26_30m.tif",
-    "sha256": "35938ed7d02e75a1d566918228dd449f4743db247e96e46ee11f2882386bedff",
+    "sha256": "efc9f8879ce8008f128d4004474e2fc377d47845a7cb270c29f62f893625f368",
     "celda_ha": 0.09
   },
   "fuentes": {
@@ -54,8 +54,8 @@
       "unidades": 75,
       "ha_total": 3595572.72,
       "ha_total_cruces_R26": 3595572.72,
-      "pares_clase_unidad": 2676,
-      "pares_cruces_R26": 2676,
+      "pares_clase_unidad": 2699,
+      "pares_cruces_R26": 2699,
       "dif_max_ha": 0.0,
       "pares_con_dif_mayor_0_1_ha": 0
     },
@@ -63,8 +63,8 @@
       "unidades": 18,
       "ha_total": 11169459.72,
       "ha_total_cruces_R26": 11169459.72,
-      "pares_clase_unidad": 1350,
-      "pares_cruces_R26": 1350,
+      "pares_clase_unidad": 1371,
+      "pares_cruces_R26": 1371,
       "dif_max_ha": 0.0,
       "pares_con_dif_mayor_0_1_ha": 0
     },
@@ -72,8 +72,8 @@
       "unidades": 298,
       "ha_total": 11141525.43,
       "ha_total_cruces_R26": 11141525.43,
-      "pares_clase_unidad": 14025,
-      "pares_cruces_R26": 14025,
+      "pares_clase_unidad": 14109,
+      "pares_cruces_R26": 14109,
       "dif_max_ha": 0.0,
       "pares_con_dif_mayor_0_1_ha": 0
     },
