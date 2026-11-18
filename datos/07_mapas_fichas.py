@@ -1,7 +1,7 @@
-"""Mapas de distribución de las fichas (uno por clase) dibujados desde el ráster 2026 con el ajuste de manglares.
+"""Mapas de distribución de las fichas (uno por clase) dibujados desde el ráster maestro (con el ajuste de manglares).
 
 Adaptado de Entrega_final_R26/scripts/pipeline/dibujar_catalogo_R26.py (mismo encuadre, colores, escala y norte);
-cambia la fuente (datos/raster/Mapa_Ecosistemas_2026_30m.tif, ver 00_ajuste_manglares.py) y el rótulo, que dice
+cambia el rótulo, que dice
 «Honduras · 2026 · UTM 16N». No dibuja los mapas de grupo, que el visor no usa.
 
 Salida: datos/raster/mapas_fichas/<codigo>.png (los lee 03_fichas.py) y public/data/fichas/mapas/<codigo>.webp.
@@ -23,7 +23,7 @@ from rasterio.windows import Window
 AQUI = Path(__file__).resolve().parent
 R26 = Path(os.environ.get("ECOSYSTEMS_R26_DIR", AQUI.parent.parent / "Entrega_final_R26"))
 GEO = R26 / "Geodatos"
-TIF = Path(os.environ.get("RASTER_2026", AQUI / "raster" / "Mapa_Ecosistemas_2026_30m.tif"))
+TIF = GEO / "Mapa_Ecosistemas_R26_30m.tif"
 CTX = Path(os.environ.get("CONTEXTO_MAPA", "D:/web_D_anctigravity/analisis_ecosistemas/@MAPA_ECOSISTEMAS_V00/"
                           "20_V004_revision_ecologica_final_20261024/09_reproducibilidad/assets_revision/contexto_mapa.json"))
 PNG = AQUI / "raster" / "mapas_fichas"

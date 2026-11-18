@@ -47,11 +47,7 @@ El resultado queda en `dist/`; `npm run preview` lo sirve en local.
 
 Requisitos: Python 3.11+ con `rasterio`, `geopandas`, `shapely>=2.1`, `numpy`, `pandas` y `pmtiles`.
 
-```bash
-python datos/00_ajuste_manglares.py
-```
-
-Primero se corrige la costa de los manglares. En el ráster entregado había manglar «del Caribe» en el Golfo de Fonseca (6261: 1.459,53 ha; 6271: 11,16 ha) y manglar «del Pacífico» en la costa norte (6272: 7,29 ha). El script copia el ráster a `datos/raster/Mapa_Ecosistemas_2026_30m.tif` (no se sube al repositorio) y asigna esas celdas a la clase de su costa, sin cambiar la estructura (alto y denso / bajo y enano). El corte es el paralelo y = 1.600.000 m (UTM 16N, ≈ 14,5° N). El registro queda en `datos/ajuste_manglares.json`. El ráster entregado no se modifica. Los demás scripts leen el ráster ajustado; la variable `RASTER_2026` permite usar otro. Por este ajuste, el control de `manifiesto.json` contra los cruces oficiales R26 muestra diferencias solo en los pares de manglar de las unidades costeras.
+Los scripts leen el ráster maestro de la entrega (`Entrega_final_R26/Geodatos/Mapa_Ecosistemas_R26_30m.tif`). Desde el 17 de noviembre de 2026 ese maestro incluye el **ajuste de manglares por costa** (`Entrega_final_R26/scripts/18_ajuste_manglares_R26.py`): el manglar que tenía la clase del Caribe en el Golfo de Fonseca pasó a las del Pacífico (6261 → 6262: 1.459,53 ha; 6271 → 6272: 11,16 ha) y el que tenía la clase del Pacífico en la costa norte pasó a la del Caribe (6272 → 6271: 7,29 ha). Las superficies, los cruces territoriales, los indicadores y los catálogos de la entrega se recalcularon con ese maestro.
 
 ```bash
 python datos/01_teselas_R26.py
@@ -71,7 +67,7 @@ El tercer script necesita además `python-docx` y `Pillow`. Extrae las 115 ficha
 python datos/07_mapas_fichas.py
 ```
 
-Dibuja los 115 mapas de distribución de las fichas desde el ráster ajustado, con el mismo diseño del catálogo (adaptado de `Entrega_final_R26/scripts/pipeline/dibujar_catalogo_R26.py`) y el rótulo «Honduras · 2026 · UTM 16N». Deja los PNG en `datos/raster/mapas_fichas/`, que es la carpeta que lee `03_fichas.py`, y los WebP en `public/data/fichas/mapas/`.
+Dibuja los 115 mapas de distribución de las fichas desde el ráster maestro, con el mismo diseño del catálogo (adaptado de `Entrega_final_R26/scripts/pipeline/dibujar_catalogo_R26.py`) y el rótulo «Honduras · 2026 · UTM 16N». Deja los PNG en `datos/raster/mapas_fichas/`, que es la carpeta que lee `03_fichas.py`, y los WebP en `public/data/fichas/mapas/`.
 
 ```bash
 python datos/06_revision_fichas.py

@@ -30,7 +30,7 @@ AQUI = Path(__file__).resolve().parent
 APP = AQUI.parent
 R26 = Path(os.environ.get("ECOSYSTEMS_R26_DIR", APP.parent / "Entrega_final_R26"))
 CATALOGOS = R26 / "Catalogos" / "Catalogo_agrupado_1"
-MAPAS = AQUI / "raster" / "mapas_fichas"  # 07_mapas_fichas.py (ráster 2026 con ajuste de manglares)
+MAPAS = AQUI / "raster" / "mapas_fichas"  # 07_mapas_fichas.py (rótulo 2026)
 OUT = APP / "public" / "data" / "fichas"
 
 FIGURA = re.compile(r"^(Figura|Foto|Fotograf|Lámina|Imagen|Mapa)\b", re.I)
