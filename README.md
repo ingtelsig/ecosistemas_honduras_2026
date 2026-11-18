@@ -10,9 +10,10 @@ Aplicación web estática que presenta el **Mapa de Ecosistemas de Honduras, edi
 - Leyenda derecha plegable con la jerarquía GET-UICN (Reino › Bioma › EFG › clase). Sus casillas también filtran el mapa, y puede limitarse a las clases de la unidad seleccionada.
 - Catálogo de fichas de las 115 unidades ecosistémicas. Se abre desde la pestaña Catálogo o con el botón **i** junto a cada clase: en la leyenda, en la tabla del resumen y en la consulta por clic.
 - El PDF lista las clases presentes por grupo nacional y por jerarquía GET-UICN.
+- Botón **Mapa base**: mapa base propio o mapas base gratuitos de Esri (imágenes satelitales, topográfico, calles, relieve sombreado, gris claro y gris oscuro), con control de opacidad del mapa de ecosistemas. La elección se recuerda en el navegador y se aplica también al mapa de comparación y al PDF.
 - Zoom máximo fijado a la escala del mapa, 1:50.000 (escala nominal con píxel de 0,28 mm), que se muestra en la esquina inferior izquierda.
 
-No usa servidores ni servicios externos. El mapa base se dibuja con los límites propios del proyecto, y el ráster va en un único archivo PMTiles que se lee por rangos HTTP.
+No necesita servidores propios. El mapa base por defecto se dibuja con los límites del proyecto, y el ráster va en un único archivo PMTiles que se lee por rangos HTTP. Los mapas base de Esri, opcionales, se cargan desde los servicios de teselas de ArcGIS Online (`server.arcgisonline.com`) con su atribución; están en `src/mapabase.ts`.
 
 ## Estructura
 

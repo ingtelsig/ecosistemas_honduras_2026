@@ -300,3 +300,12 @@ button.info:hover, .cat-lista button:hover .info { background: var(--verde); col
   .cmp-panel { left: 8px; right: 8px; width: auto; top: 46px; max-height: 55%; }
   .cort-lado { font-size: 11px; max-width: 34vw; }
 }
+
+/* ---------------------------------------------------------------- mapa base */
+.mb-opacidad { display: block; margin: 10px 0 2px; }
+.mb-opacidad output { float: right; color: var(--gris); font-variant-numeric: tabular-nums; }
+.mb-opacidad input { width: 100%; accent-color: var(--verde); margin-top: 4px; }
+.mb-lista { border-top: 1px solid var(--linea); border-radius: 6px; }
+/* Botones «Mapa base» y «Comparar» en una fila */
+.maplibregl-ctrl-top-left:has(.ctrl-comparar) { display: flex; flex-wrap: wrap; gap: 6px; padding: 10px 0 0 10px; }
+.maplibregl-ctrl-top-left:has(.ctrl-comparar) > .maplibregl-ctrl { margin: 0; float: none; }

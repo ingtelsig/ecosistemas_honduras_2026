@@ -4,6 +4,7 @@
 import maplibregl, { addProtocol, type Map as MapaML, type StyleSpecification } from "maplibre-gl";
 import { PMTiles } from "pmtiles";
 import { url } from "./datos";
+import { registrarMapaBase } from "./mapabase";
 
 const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
 
@@ -214,6 +215,7 @@ function crearEspejo() {
     zoom: principal.getZoom(),
     maxZoom: principal.getMaxZoom(),
   });
+  registrarMapaBase(espejo);
   principal.on("move", sincronizar);
   principal.on("resize", () => {
     espejo?.resize();
@@ -325,6 +327,7 @@ class ControlComparar implements maplibregl.IControl {
     el.btn.addEventListener("click", () => {
       const abrir = el.panel.hidden;
       el.panel.hidden = !abrir;
+      if (abrir) document.querySelectorAll<HTMLElement>(".mb-panel").forEach((p) => (p.hidden = true));
       el.btn.setAttribute("aria-expanded", String(abrir));
     });
     d.appendChild(el.btn);
