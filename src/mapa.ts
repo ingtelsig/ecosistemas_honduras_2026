@@ -1,4 +1,4 @@
-// Mapa MapLibre sin servicios externos: fondo propio (tierra, mar y límites), capa R26 y límites de reporte.
+// Mapa MapLibre sin servicios externos: fondo propio (tierra, mar y límites), capa 2026 y límites de reporte.
 import maplibregl, { type GeoJSONSource, type LngLatBoundsLike, type Map as MapaML } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { url, type ClaveCapa } from "./datos";
@@ -50,7 +50,7 @@ export function crearMapa(contenedor: string): Promise<MapaML> {
     bounds: HONDURAS,
     fitBoundsOptions: { padding: 20 },
     maxBounds: [[-95, 9], [-76, 21]],
-    attributionControl: { compact: true, customAttribution: "Mapa de Ecosistemas de Honduras R26 · Límites: ICF, SINIT/SEPLAN (HDX)" },
+    attributionControl: { compact: true, customAttribution: "Mapa de Ecosistemas de Honduras 2026 · Límites: ICF, SINIT/SEPLAN (HDX)" },
     canvasContextAttributes: { preserveDrawingBuffer: true }, // necesario para capturar el mapa en el PDF
     style: {
       version: 8,

@@ -3,16 +3,22 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Ecosistemas de Honduras R26</title>
-    <meta name="description" content="Geovisor del Mapa de Ecosistemas de Honduras R26 con resúmenes y reportes PDF por área protegida, departamento y municipio." />
+    <title>Mapa de Ecosistemas de Honduras 2026</title>
+    <meta name="description" content="Geovisor del Mapa de Ecosistemas de Honduras 2026 con resúmenes y reportes PDF por área protegida, pueblo indígena, departamento, municipio, cuenca, subcuenca y microcuenca declarada." />
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%231d5e22'/%3E%3Cpath d='M8 24c4-10 12-14 16-16-2 6-6 14-16 16z' fill='%23d8a94e'/%3E%3C/svg%3E" />
   </head>
   <body>
     <a class="saltar" href="#panel">Ir al panel</a>
     <header class="cabecera">
-      <div>
-        <h1>Ecosistemas de Honduras</h1>
-        <p>Mapa nacional R26 · 115 clases a 30 m</p>
+      <div class="cab-titulo">
+        <h1>Mapa Nacional de Ecosistemas de Honduras 2026</h1>
+        <p>115 clases a 30 m · Tipología Global de Ecosistemas UICN</p>
+      </div>
+      <div class="cab-logos">
+        <img src="logos/logos_institucionales.png" alt="Cooperación alemana, KfW, UICN, CCAD y SICA" class="logo-inst" />
+        <img src="logos/logo_serna.png" alt="SERNA" class="logo-serna" />
+        <span class="cab-sep" aria-hidden="true"></span>
+        <img src="logos/logo_intelsig.png" alt="INGTELSIG" class="logo-intelsig" />
       </div>
       <button id="btn-panel" class="btn-icono solo-movil" aria-controls="panel" aria-expanded="true" title="Mostrar u ocultar el panel">☰</button>
     </header>
@@ -57,7 +63,7 @@
         </section>
 
         <section id="vista-catalogo" role="tabpanel" aria-labelledby="tab-catalogo" hidden>
-          <p class="nota">Fichas monográficas de las 115 unidades ecosistémicas del Catálogo R26. También se abren con el botón <span class="info" aria-hidden="true">i</span> junto al nombre de cada clase.</p>
+          <p class="nota">Fichas monográficas de las 115 unidades ecosistémicas del Catálogo del Mapa de Ecosistemas 2026. También se abren con el botón <span class="info" aria-hidden="true">i</span> junto al nombre de cada clase.</p>
           <div class="campo">
             <label for="buscar-ficha">Buscar ficha</label>
             <input id="buscar-ficha" type="search" placeholder="Código o nombre de la unidad" autocomplete="off" />
@@ -94,7 +100,7 @@
           </div>
           <div id="arbol-grupos" class="arbol arbol-get" data-para="grupos" hidden></div>
           <div id="arbol-get" class="arbol arbol-get" data-para="get"></div>
-          <p class="ley-nota" data-para="get"><b>Varios … · pendiente de reparto</b>: la clase corresponde a más de una rama en ese nivel (MULT). <b>Relación contextual</b>: la clase 635 (relieve submarino) se muestra bajo M3.4 como referencia, sin membresía; en las superficies R26 figura como «Sin correspondencia de membresía».</p>
+          <p class="ley-nota" data-para="get"><b>Varios … · pendiente de reparto</b>: la clase corresponde a más de una rama en ese nivel (MULT). <b>Relación contextual</b>: la clase 635 (relieve submarino) se muestra bajo M3.4 como referencia, sin membresía; en las superficies del mapa 2026 figura como «Sin correspondencia de membresía».</p>
         </div>
       </aside>
     </main>

@@ -32,7 +32,7 @@ export interface Unidad {
   clases: [number, number][];
 }
 
-export type ClaveCapa = "areas_protegidas" | "pueblos_indigenas" | "departamentos" | "municipios";
+export type ClaveCapa = "areas_protegidas" | "pueblos_indigenas" | "departamentos" | "municipios" | "cuencas" | "subcuencas" | "microcuencas";
 
 export interface DefCapa {
   clave: ClaveCapa;
@@ -53,6 +53,15 @@ export const CAPAS: DefCapa[] = [
   },
   { clave: "departamentos", nombre: "Departamentos", singular: "Departamento", disponible: true },
   { clave: "municipios", nombre: "Municipios", singular: "Municipio", disponible: true },
+  { clave: "cuencas", nombre: "Cuencas", singular: "Cuenca hidrográfica", disponible: true, nota: "Cuencas hidrográficas de Honduras (25)" },
+  { clave: "subcuencas", nombre: "Subcuencas", singular: "Subcuenca hidrográfica", disponible: true, nota: "Subcuencas hidrográficas (133)" },
+  {
+    clave: "microcuencas",
+    nombre: "Microcuencas declaradas",
+    singular: "Microcuenca declarada",
+    disponible: true,
+    nota: "Microcuencas abastecedoras de agua declaradas por acuerdo (ICF)",
+  },
 ];
 
 export interface Manifiesto {

@@ -1,5 +1,5 @@
 {
-  "edicion": "R26",
+  "edicion": "2026",
   "generado": "2026-11-17",
   "raster": {
     "archivo": "Mapa_Ecosistemas_R26_30m.tif",
@@ -11,6 +11,9 @@
     "departamentos": "OCHA/HDX, límites administrativos de Honduras, a partir de SINIT/SEPLAN 2010 (CC BY-IGO)",
     "municipios": "OCHA/HDX, límites administrativos de Honduras, a partir de SINIT/SEPLAN 2010 (CC BY-IGO)",
     "pueblos_indigenas": "UICN-Honduras, capa de pueblos indígenas y afrohondureños (30 polígonos, campo ETNIA_1); los polígonos de un mismo pueblo se unen en una unidad",
+    "cuencas": "ICF / territorios del catálogo ecológico: cuencas hidrográficas de Honduras (25 cuencas)",
+    "subcuencas": "ICF / territorios del catálogo ecológico: subcuencas hidrográficas (133 subcuencas)",
+    "microcuencas": "ICF, microcuencas abastecedoras de agua declaradas por acuerdo (1.928 polígonos)",
     "limite_marino": "Limite_Territorio_Marino.shp"
   },
   "control_cruces_R26": {
@@ -38,6 +41,15 @@
       "ha_total_cruces_R26": 11141525.43,
       "pares_clase_unidad": 14044,
       "pares_cruces_R26": 14044,
+      "dif_max_ha": 0.0,
+      "pares_con_dif_mayor_0_1_ha": 0
+    },
+    "microcuencas": {
+      "unidades": 1928,
+      "ha_total": 554199.03,
+      "ha_total_cruces_R26": 554199.03,
+      "pares_clase_unidad": 15940,
+      "pares_cruces_R26": 15940,
       "dif_max_ha": 0.0,
       "pares_con_dif_mayor_0_1_ha": 0
     }

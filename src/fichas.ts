@@ -1,4 +1,4 @@
-// Catálogo de fichas monográficas por unidad ecosistémica (generadas por datos/03_fichas.py desde los catálogos R26).
+// Catálogo de fichas monográficas por unidad ecosistémica (generadas por datos/03_fichas.py desde los catálogos 2026).
 import { ha, pct, url, type Catalogo, type Clase, type Unidad } from "./datos";
 import { claseDe } from "./resumen";
 import { categoriasGET, nombreGET, rutaGET } from "./leyenda";
@@ -137,7 +137,7 @@ function cabecera(c: Clase): string {
         <p class="f-meta">GET-UICN: ${get}${contextual ? " · relación contextual" : ""}${
           c.efg.length ? ` · ${c.efg.map((e) => `${e[0]}${e[2] ? " (principal)" : ""}`).join(", ")}` : ""
         }</p>
-        <p class="f-meta">Superficie nacional R26: <b>${ha(c.ha_ajustada)} ha</b> ajustadas · ${ha(c.ha_cartografiada)} ha cartografiadas${
+        <p class="f-meta">Superficie nacional 2026: <b>${ha(c.ha_ajustada)} ha</b> ajustadas · ${ha(c.ha_cartografiada)} ha cartografiadas${
           u && enU ? ` · En ${esc(u.nombre)}: <b>${ha(enU[1])} ha</b> (${pct((100 * enU[1]) / totalU)})` : ""
         }</p>
       </div>
@@ -158,9 +158,9 @@ export async function abrirFicha(cod: number) {
     if (actual !== cod) return; // el usuario ya pasó a otra ficha
     cuerpo.innerHTML =
       cabecera(c) +
-      (f.mapa ? `<figure class="f-mapa"><img src="${url(f.mapa)}" alt="Mapa de distribución de la unidad ${cod} en Honduras" loading="lazy"><figcaption>Distribución de la unidad ${cod} en el Mapa de Ecosistemas R26.</figcaption></figure>` : "") +
+      (f.mapa ? `<figure class="f-mapa"><img src="${url(f.mapa)}" alt="Mapa de distribución de la unidad ${cod} en Honduras" loading="lazy"><figcaption>Distribución de la unidad ${cod} en el Mapa de Ecosistemas 2026.</figcaption></figure>` : "") +
       `<div class="f-texto">${bloquesHTML(f.bloques)}</div>
-       <p class="f-fuente">Fuente: Catálogo de unidades ecosistémicas R26 (${esc(f.catalogo.replace(/_/g, " "))}). Las fotografías de campo y los gráficos se consultan en el catálogo completo.</p>`;
+       <p class="f-fuente">Fuente: Catálogo de unidades ecosistémicas del Mapa de Ecosistemas 2026 (${esc(f.catalogo.replace(/_R26$/, "").replace(/_/g, " "))}). Las fotografías de campo y los gráficos se consultan en el catálogo completo.</p>`;
     cuerpo.scrollTop = 0;
   } catch {
     cuerpo.querySelector(".f-cargando")!.textContent = "No se pudo cargar la ficha.";

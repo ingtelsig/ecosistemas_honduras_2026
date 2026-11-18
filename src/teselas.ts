@@ -1,4 +1,4 @@
-// Teselas ráster R26 con el código de clase por píxel (R = código >> 8, G = código & 255; alfa 0 = sin dato).
+// Teselas ráster 2026 con el código de clase por píxel (R = código >> 8, G = código & 255; alfa 0 = sin dato).
 // El protocolo "eco://" lee la tesela del PMTiles, guarda los códigos y devuelve una imagen pintada
 // con la paleta oficial; las clases ocultas se pintan transparentes.
 import { addProtocol } from "maplibre-gl";

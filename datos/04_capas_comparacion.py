@@ -19,6 +19,9 @@ capas iniciales HND_11–16 de WorldClim y amplitud EVI2 v04.
 """
 from __future__ import annotations
 
+import sys as _sys
+_sys.path.insert(0, str(__import__('pathlib').Path(__file__).resolve().parent))
+from texto_2026 import a_2026_obj  # «R26» -> «2026» en los textos públicos
 import csv
 import io
 import json
@@ -82,8 +85,12 @@ COB_2024 = [  # Mapa Forestal y de Cobertura ICF 2024 (colores de MapaForestal_2
 
 
 # ----------------------------------------------------------------------------- definición de capas
+ALTIMONTANO = 2000  # m; el mapa agrupa montano y altimontano, aquí se separan como referencia
+
+
 def piso_r26(a):
-    """Piso altitudinal con los umbrales del R26: Caribe <500 / 500–1000 / ≥1000 m · Pacífico <700 / 700–1200 / ≥1200 m."""
+    """Piso altitudinal con los umbrales del mapa: Caribe <500 / 500–1000 / ≥1000 m · Pacífico <700 / 700–1200 / ≥1200 m;
+    altimontano ≥ 2000 m en ambas vertientes."""
     elev, vert = a
     pac = vert == 2
     p = np.full(elev.shape, np.nan, np.float32)
@@ -93,6 +100,7 @@ def piso_r26(a):
     p[ok & ~pac & (elev >= 1000)] = 3
     p[ok & pac & (elev >= 700)] = 2
     p[ok & pac & (elev >= 1200)] = 3
+    p[ok & (elev >= ALTIMONTANO)] = 4
     return p
 
 
@@ -117,60 +125,61 @@ def cero_es_vacio(a):
 
 
 CAPAS = [
-    {"id": "cobertura_2024", "nombre": "Cobertura forestal y uso del suelo 2024", "grupo": "Cobertura",
+    {"id": "cobertura_2024", "uso": 'Es la base de cobertura del mapa. Separa bosque latifoliado, conífera, mixto, mangle, cultivos, pastizales, humedales y áreas transformadas, y decide a qué familia de clases (grupo nacional) pertenece cada celda antes de aplicar régimen, piso y drenaje.', "nombre": "Cobertura forestal y uso del suelo 2024", "grupo": "Cobertura",
      "fuente": "ICF, Mapa Forestal y de Cobertura de la Tierra 2024 (HND_02)", "tipo": "clases", "zmax": 12,
      "src": [(BASE / "HND_02_mapa_cobertura_2024.tif", 1)], "nodata0": True,
      "clases": [{"v": c, "n": n, "c": col} for c, n, col in COB_2024]},
-    {"id": "elevacion", "nombre": "Elevación", "grupo": "Relieve", "unidad": "m s.n.m.",
+    {"id": "elevacion", "uso": 'Define el piso altitudinal junto con la vertiente. Sus umbrales separan tierras bajas, submontano y montano en los bosques, arbustales y cafetales.', "nombre": "Elevación", "grupo": "Relieve", "unidad": "m s.n.m.",
      "fuente": "SRTM 30 m (HND_01)", "tipo": "continua", "zmax": 11, "min": 0, "max": 2800, "f": "lineal",
      "src": [(BASE / "HND_01_elevacion_srtm_m.tif", 1)], "rampa": "terreno",
      "umbrales": [{"v": 500, "n": "500 m: piso submontano (Caribe)"}, {"v": 700, "n": "700 m: piso submontano (Pacífico)"},
-                  {"v": 1000, "n": "1.000 m: piso montano (Caribe)"}, {"v": 1200, "n": "1.200 m: piso montano (Pacífico)"}]},
-    {"id": "piso", "nombre": "Piso altitudinal", "grupo": "Relieve",
+                  {"v": 1000, "n": "1.000 m: piso montano (Caribe)"}, {"v": 1200, "n": "1.200 m: piso montano (Pacífico)"},
+                  {"v": 2000, "n": "2.000 m: piso altimontano"}]},
+    {"id": "piso", "uso": 'Es el factor P del código de clase (1 tierras bajas, 2 submontano, 3 montano / altimontano) en bosques latifoliados, coníferas, mixtos y cafetales. Los umbrales cambian por vertiente porque en el Pacífico los pisos suben unos 200 m.', "nombre": "Piso altitudinal", "grupo": "Relieve",
      "fuente": "Derivado de SRTM (HND_01) y vertiente (HND_03) con los umbrales del R26", "tipo": "clases", "zmax": 11,
      "src": [(BASE / "HND_01_elevacion_srtm_m.tif", 1), (BASE / "HND_03_vertiente_caribe_pacifico.tif", 1)],
      "calc": piso_r26, "clases": [{"v": 1, "n": "Tierras bajas", "c": "#f2e6b6"}, {"v": 2, "n": "Submontano", "c": "#c9a86a"},
-                                   {"v": 3, "n": "Montano / altimontano", "c": "#7a5a3a"}],
-     "nota": "Caribe: <500 / 500–1.000 / ≥1.000 m. Pacífico: <700 / 700–1.200 / ≥1.200 m."},
-    {"id": "vertiente", "nombre": "Vertiente", "grupo": "Relieve", "fuente": "Cuencas hidrográficas (HND_03)",
+                                   {"v": 3, "n": "Montano", "c": "#8a6a44"}, {"v": 4, "n": "Altimontano", "c": "#4a3426"}],
+     "nota": "Caribe: <500 / 500–1.000 / ≥1.000 m. Pacífico: <700 / 700–1.200 / ≥1.200 m. Altimontano: ≥2.000 m en ambas vertientes."},
+    {"id": "vertiente", "uso": 'Ajusta los umbrales de piso: en el Caribe el submontano empieza a 500 m y el montano a 1.000 m; en el Pacífico, a 700 y 1.200 m.', "nombre": "Vertiente", "grupo": "Relieve", "fuente": "Cuencas hidrográficas (HND_03)",
      "tipo": "clases", "zmax": 11, "src": [(BASE / "HND_03_vertiente_caribe_pacifico.tif", 1)], "calc": cero_es_vacio,
      "clases": [{"v": 1, "n": "Caribe / Atlántico", "c": "#4f86c6"}, {"v": 2, "n": "Pacífico", "c": "#e0a040"}]},
-    {"id": "hand", "nombre": "Altura sobre el drenaje (HAND)", "grupo": "Drenaje", "unidad": "m",
+    {"id": "hand", "uso": 'Mide la altura del terreno sobre el cauce más cercano. Con el área drenada y el agua superficial define el factor de drenaje (D): aluvial o mal drenado hasta 10 m, moderadamente drenado de 10 a 25 m y bien drenado por encima.', "nombre": "Altura sobre el drenaje (HAND)", "grupo": "Drenaje", "unidad": "m",
      "fuente": "MERIT Hydro (HND_06)", "tipo": "continua", "zmax": 11, "min": 0, "max": 150, "f": "raiz",
      "src": [(BASE / "HND_06_hand_altura_sobre_drenaje_m.tif", 1)], "rampa": "agua",
      "umbrales": [{"v": 3, "n": "3 m: hidromórfico (con agua superficial)"}, {"v": 10, "n": "10 m: aluvial o mal drenado"},
                   {"v": 25, "n": "25 m: moderadamente / bien drenado"}]},
-    {"id": "drenaje", "nombre": "Grupo de drenaje", "grupo": "Drenaje",
+    {"id": "drenaje", "uso": 'Es el factor D del código de bosques latifoliados, arbustales y pastizales: 2 aluvial o mal drenado (incluye el hidromórfico), 3 moderadamente drenado y 4 bien drenado.', "nombre": "Grupo de drenaje", "grupo": "Drenaje",
      "fuente": "Derivado de HAND, área acumulada (MERIT) y agua superficial GSW (HND_10)", "tipo": "clases", "zmax": 12,
      "src": [(BASE / "HND_10_grupo_drenaje.tif", 1)], "calc": cero_es_vacio,
      "clases": [{"v": 1, "n": "Hidromórfico", "c": "#1f4e9c"}, {"v": 2, "n": "Aluvial o mal drenado", "c": "#5fa3d9"},
                 {"v": 3, "n": "Moderadamente drenado", "c": "#c7d98a"}, {"v": 4, "n": "Bien drenado", "c": "#e8c26a"}],
      "nota": "En la leyenda R26 el grupo hidromórfico se une con aluvial o mal drenado."},
-    {"id": "agua_estacional", "nombre": "Meses con agua superficial", "grupo": "Drenaje", "unidad": "meses",
+    {"id": "agua_estacional", "uso": 'Indica cuántos meses al año hay agua en superficie. Una celda con agua al menos un mes pasa al grupo aluvial o mal drenado, y ayuda a delimitar humedales y lagunas.', "nombre": "Meses con agua superficial", "grupo": "Drenaje", "unidad": "meses",
      "fuente": "JRC Global Surface Water, estacionalidad (HND_08)", "tipo": "clases", "zmax": 12,
      "src": [(BASE / "HND_08_gsw_seasonality_meses.tif", 1)], "calc": cero_es_vacio, "rampa_clases": "agua",
      "clases": [{"v": m, "n": f"{m} {'mes' if m == 1 else 'meses'}"} for m in range(1, 13)]},
-    {"id": "lluvia", "nombre": "Precipitación anual", "grupo": "Clima", "unidad": "mm",
+    {"id": "lluvia", "uso": 'Con los meses secos define el régimen climático (factor R: pluvial / siempreverde, estacional / semideciduo o seco / deciduo) mediante un modelo calibrado con las zonas de vida de Holdridge.', "nombre": "Precipitación anual", "grupo": "Clima", "unidad": "mm",
      "fuente": "CHPclim2 1991–2020 (versión usada en el R26; celdas de 0,05° ≈ 5,5 km)", "tipo": "continua",
      "zmax": 10, "min": 600, "max": 3600, "f": "lineal", "src": [(CHP, list(range(1, 13)))], "calc": lluvia_anual,
      "remuestreo": "vecino", "rampa": "lluvia"},
-    {"id": "meses_secos", "nombre": "Meses secos (< 60 mm)", "grupo": "Clima", "unidad": "meses",
+    {"id": "meses_secos", "uso": 'Cuenta los meses con menos de 60 mm. Es la variable de estacionalidad del régimen climático: más meses secos llevan a régimen estacional o seco.', "nombre": "Meses secos (< 60 mm)", "grupo": "Clima", "unidad": "meses",
      "fuente": "CHPclim2 1991–2020 (versión usada en el R26; celdas de 0,05° ≈ 5,5 km)", "tipo": "clases", "zmax": 10,
      "src": [(CHP, list(range(1, 13)))], "calc": meses_secos, "cero_valido": True, "rampa_clases": "seco",
      "clases": [{"v": m, "n": f"{m} {'mes' if m == 1 else 'meses'}"} for m in range(0, 13)]},
-    {"id": "evi2", "nombre": "Cambio estacional del verdor (amplitud EVI2)", "grupo": "Fenología", "unidad": "",
+    {"id": "evi2", "uso": 'Mide cuánto cambia el verdor del dosel entre la época lluviosa y la seca. Confirma o corrige el régimen climático: amplitud baja indica dosel siempreverde y amplitud alta, dosel deciduo. Separa, por ejemplo, el bosque estacional del seco con la misma lluvia.', "nombre": "Cambio estacional del verdor (amplitud EVI2)", "grupo": "Fenología", "unidad": "",
      "fuente": "Sentinel-2 2019–2025, EVI2 P90 − P10 (versión usada en el R26)", "tipo": "continua", "zmax": 11,
      "min": 0, "max": 0.5, "f": "lineal", "decimales": 2, "src": [(S2, 10)], "escala": 0.0001, "nodata": -32768,
      "rampa": "fenologia",
      "umbrales": [{"v": 0.12, "n": "0,12: siempreverde / pluvial"}, {"v": 0.22, "n": "0,22: deciduo (seco)"}]},
-    {"id": "altura_dosel", "nombre": "Altura de la vegetación", "grupo": "Estructura", "unidad": "m",
+    {"id": "altura_dosel", "uso": 'Separa formaciones por estructura: bosque frente a arbustal, matorral o pastizal, y bosque denso frente a ralo o sabana de pino.', "nombre": "Altura de la vegetación", "grupo": "Estructura", "unidad": "m",
      "fuente": "Integración ETH 2020 y GLAD/GEDI (HND_22)", "tipo": "continua", "zmax": 11, "min": 0, "max": 35,
      "f": "lineal", "src": [(BASE / "HND_22_altura_vegetacion_integrada_m.tif", 1)], "rampa": "verde"},
-    {"id": "cobertura_arborea", "nombre": "Cobertura arbórea", "grupo": "Estructura", "unidad": "%",
+    {"id": "cobertura_arborea", "uso": 'Completa a la altura: indica si la vegetación forma dosel cerrado (bosque), abierto (bosque ralo, sabana arbolada) o no arbóreo (arbustal, pastizal).', "nombre": "Cobertura arbórea", "grupo": "Estructura", "unidad": "%",
      "fuente": "Integración GFCC, Copernicus y Dynamic World (HND_23)", "tipo": "continua", "zmax": 11,
      "min": 0, "max": 100, "f": "lineal", "src": [(BASE / "HND_23_cobertura_arborea_integrada_pct.tif", 1)],
      "rampa": "verde"},
-    {"id": "mapa_2002", "nombre": "Mapa de Ecosistemas 2002", "grupo": "Mapa anterior", "tipo": "clases", "zmax": 12,
+    {"id": "mapa_2002", "uso": 'No interviene en la clasificación. Es el antecedente nacional (Mejía Ordóñez y House 2002) que sirvió de base al sistema de clases y permite comparar visualmente los cambios.', "nombre": "Mapa de Ecosistemas 2002", "grupo": "Mapa anterior", "tipo": "clases", "zmax": 12,
      "fuente": "Mejía Ordóñez y House (2002), Mapa de Ecosistemas Vegetales de Honduras",
      "vector": V2002,
      "nota": "Colores tomados de la clase R26 con la que más se superpone cada clase 2002 (tabla de correspondencia revisable)."},
@@ -434,8 +443,14 @@ def procesar(capa: dict, w: float, s: float, e: float, n: float) -> dict:
     return {"MB": round(mb, 1), "teselas": len(teselas)}
 
 
+# Orden en el visor: criterios de relieve, drenaje, clima, fenología y estructura; al final la cobertura 2024 y el mapa 2002
+ORDEN = ["elevacion", "piso", "vertiente", "hand", "drenaje", "agua_estacional", "lluvia", "meses_secos", "evi2",
+         "altura_dosel", "cobertura_arborea", "cobertura_2024", "mapa_2002"]
+CAPAS.sort(key=lambda c: ORDEN.index(c["id"]))
+
+
 def metadatos(capa: dict) -> dict:
-    out = {k: capa[k] for k in ("id", "nombre", "grupo", "fuente", "tipo", "zmax") if k in capa}
+    out = {k: capa[k] for k in ("id", "nombre", "grupo", "fuente", "uso", "tipo", "zmax") if k in capa}
     for k in ("unidad", "min", "max", "f", "umbrales", "nota", "decimales"):
         if k in capa:
             out[k] = capa[k]
@@ -472,7 +487,8 @@ def main() -> None:
     for capa in CAPAS:
         if solo and capa["id"] not in solo:
             if capa["id"] in previo:
-                salida.append(previo[capa["id"]])
+                textos = {k: capa[k] for k in ("nombre", "grupo", "fuente", "uso", "nota", "umbrales") if k in capa}
+                salida.append({**previo[capa["id"]], **textos})
             continue
         print(f"== {capa['nombre']}", flush=True)
         info = procesar(capa, w, s, e, n)
@@ -480,8 +496,8 @@ def main() -> None:
         m.update(info)
         salida.append(m)
         meta_ruta.parent.mkdir(parents=True, exist_ok=True)
-        meta_ruta.write_text(json.dumps({"capas": salida}, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
-    meta_ruta.write_text(json.dumps({"capas": salida}, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+        meta_ruta.write_text(json.dumps({"capas": a_2026_obj(salida)}, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+    meta_ruta.write_text(json.dumps({"capas": a_2026_obj(salida)}, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
     print("total MB:", round(sum(c.get("MB", 0) for c in salida), 1))
 
 

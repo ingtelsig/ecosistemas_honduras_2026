@@ -1,5 +1,5 @@
 // Leyendas jerárquicas: por grupo nacional y por GET-UICN (Reino › Bioma › Grupo funcional (EFG) › clase nacional).
-// GET sigue la regla de R26: una clase cuelga de una rama solo con membresía única en ese nivel.
+// GET sigue la regla de 2026: una clase cuelga de una rama solo con membresía única en ese nivel.
 // Si tiene varias membresías queda en «MULT», y si solo tiene una relación contextual, en «SIN_GET».
 import type { Catalogo, Clase } from "./datos";
 import { botonInfo } from "./fichas";
@@ -44,7 +44,7 @@ export function detalleGET(cat: Catalogo, c: Clase, nivel: 0 | 1 | 2): string {
 
 /**
  * Ruta de la clase en el árbol GET. Las clases sin membresía (SIN_GET) con una sola relación contextual se muestran
- * bajo ese EFG, marcadas como contextuales. Las cifras de resúmenes y reportes siguen la tabla R26 (SIN_GET).
+ * bajo ese EFG, marcadas como contextuales. Las cifras de resúmenes y reportes siguen la tabla 2026 (SIN_GET).
  */
 export function rutaGET(c: Clase): [string, string, string, boolean] {
   if (c.get1 === "SIN_GET" && c.efg.length === 1) {
@@ -75,7 +75,7 @@ function claseLi(c: Clase, nivelMult: -1 | 0 | 1 | 2 = -1): string {
   const mult = nivelMult >= 0 ? categoriasGET(c, nivelMult as 0 | 1 | 2) : [];
   const rel = c.efg.map((e) => `${e[0]} ${e[1]}${e[2] ? " (principal)" : ""}`).join("\n");
   const titulo = contextual
-    ? `Relación contextual con ${rel}. No es membresía: en las superficies R26 figura como «Sin correspondencia de membresía».`
+    ? `Relación contextual con ${rel}. No es membresía: en las superficies del mapa 2026 figura como «Sin correspondencia de membresía».`
     : rel ? `Correspondencias EFG:\n${rel}` : "";
   return `<li data-li="${c.codigo}" class="${contextual ? "contextual" : ""}" title="${esc(titulo)}"><label><input type="checkbox" data-clase="${c.codigo}" checked>
     <i style="background:${c.color}"></i><span><b>${c.codigo}</b> ${esc(c.nombre)}${contextual ? ' <em class="marca-ctx">relación contextual</em>' : ""}${

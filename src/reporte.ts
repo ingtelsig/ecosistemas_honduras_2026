@@ -28,9 +28,9 @@ export function crearPDF(d: DatosReporte): jsPDF {
   const { resumen: r, catalogo: cat, manifiesto: man } = d;
   const doc = new jsPDF({ unit: "mm", format: "a4", compress: true });
   doc.setProperties({
-    title: `Ecosistemas de ${r.unidad.nombre} · R26`,
+    title: `Ecosistemas de ${r.unidad.nombre} · 2026`,
     subject: "Resumen de ecosistemas por unidad territorial",
-    author: "Mapa de Ecosistemas de Honduras R26",
+    author: "Mapa de Ecosistemas de Honduras 2026",
     creator: "Geovisor de Ecosistemas de Honduras",
   });
 
@@ -48,7 +48,7 @@ export function crearPDF(d: DatosReporte): jsPDF {
 
   // ---------- Página 1: identificación, cifras clave, mapa y leyenda ----------
   doc.setFillColor(...VERDE).rect(0, 0, 210, 18, "F");
-  doc.setFont("helvetica", "bold").setFontSize(9).setTextColor(255, 255, 255).text("MAPA DE ECOSISTEMAS DE HONDURAS · EDICIÓN R26", M, 11);
+  doc.setFont("helvetica", "bold").setFontSize(9).setTextColor(255, 255, 255).text("MAPA DE ECOSISTEMAS DE HONDURAS 2026", M, 11);
   doc.setFont("helvetica", "normal").text(d.capaNombre.toUpperCase(), 210 - M, 11, { align: "right" });
 
   doc.setFont("helvetica", "bold").setFontSize(19).setTextColor(...TINTA);
@@ -245,14 +245,14 @@ export function crearPDF(d: DatosReporte): jsPDF {
   y = titulo("Nota metodológica y fuentes", y);
   const fuente = (clave: string) => man.fuentes[clave] ?? "";
   const capaFuente =
-    d.capaNombre === "Área protegida" ? fuente("areas_protegidas") : d.capaNombre === "Pueblo indígena o afrohondureño" ? fuente("pueblos_indigenas") : d.capaNombre === "Departamento" ? fuente("departamentos") : d.capaNombre === "Municipio" ? fuente("municipios") : "";
+    d.capaNombre === "Área protegida" ? fuente("areas_protegidas") : d.capaNombre === "Pueblo indígena o afrohondureño" ? fuente("pueblos_indigenas") : d.capaNombre === "Departamento" ? fuente("departamentos") : d.capaNombre === "Municipio" ? fuente("municipios") : d.capaNombre === "Cuenca hidrográfica" ? fuente("cuencas") : d.capaNombre === "Subcuenca hidrográfica" ? fuente("subcuencas") : d.capaNombre === "Microcuenca declarada" ? fuente("microcuencas") : "";
   const notas = [
-    `Superficies medidas sobre el ráster maestro del Mapa de Ecosistemas de Honduras R26 (${man.raster.archivo}), celdas de 30 × 30 m (0,09 ha) en EPSG:32616. Una celda pertenece a la unidad cuando su centro cae dentro del límite.`,
+    `Superficies medidas sobre el ráster maestro del Mapa de Ecosistemas de Honduras 2026 (archivo ${man.raster.archivo}), celdas de 30 × 30 m (0,09 ha) en EPSG:32616. Una celda pertenece a la unidad cuando su centro cae dentro del límite.`,
     "Son superficies cartográficas. Los totales nacionales oficiales aplican un ajuste proporcional por dominio (tierra 11.277.700 ha; mar 21.027.713,75 ha) que no se reparte por unidad, por lo que pueden diferir ligeramente de las cifras de este reporte.",
-    "Clases y correspondencias GET-UICN según el catálogo oficial R26 (115 clases, 14 grupos nacionales).",
+    "Clases y correspondencias GET-UICN según el catálogo oficial del Mapa de Ecosistemas 2026 (115 clases, 14 grupos nacionales).",
     capaFuente ? `Límites de la unidad: ${capaFuente}.` : "",
     r.unidad.id !== "HN" && d.capaNombre !== "Área protegida" ? "El porcentaje dentro del SINAPH usa la unión de las áreas protegidas declaradas del Geoportal ICF." : "",
-    `Cita sugerida: Mapa de Ecosistemas de Honduras, edición R26 (${cat.edicion}). SERNA, ICF, UICN ORMACC, CCAD/KfW; consultoría INGTELSIG. Reporte generado el ${fechaHoy()} con datos del ${man.generado}.`,
+    `Cita sugerida: Mapa de Ecosistemas de Honduras 2026. SERNA, ICF, UICN ORMACC, CCAD/KfW; consultoría INGTELSIG. Reporte generado el ${fechaHoy()} con datos del ${man.generado}.`,
   ].filter(Boolean);
   for (const n of notas) y = cuerpo(n, y, 8.2) + 1;
 
@@ -262,7 +262,7 @@ export function crearPDF(d: DatosReporte): jsPDF {
     doc.setPage(p);
     doc.setDrawColor(210, 214, 217).setLineWidth(0.2).line(M, 284, 210 - M, 284);
     doc.setFont("helvetica", "normal").setFontSize(7.3).setTextColor(...GRIS);
-    doc.text(`${r.unidad.nombre} · Mapa de Ecosistemas de Honduras R26 · ${fechaHoy()}`, M, 289);
+    doc.text(`${r.unidad.nombre} · Mapa de Ecosistemas de Honduras 2026 · ${fechaHoy()}`, M, 289);
     doc.text(`Página ${p} de ${total}`, 210 - M, 289, { align: "right" });
   }
   return doc;

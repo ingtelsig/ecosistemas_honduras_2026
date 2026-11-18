@@ -51,6 +51,9 @@ CAPAS = {
     "pueblos_indigenas": (None, None, 60),
     "departamentos": ("departamentos", "Departamento", 60),
     "municipios": ("municipios", "Municipio", 40),
+    "cuencas": ("cuencas", None, 80),
+    "subcuencas": ("subcuencas", None, 60),
+    "microcuencas": ("microcuencas_declaradas", "Microcuenca APR", 15),
 }
 
 
@@ -96,7 +99,7 @@ def catalogo_clases() -> dict:
     assert len(clases) == 115 and all(k["color"] for k in clases)
     grupos = [{"codigo": r["codigo"], "nombre": r["nombre"]} for r in niv if r["nivel"] == "G" and r["codigo"] != "TOTAL"]
     get = {lv: {r["codigo"]: r["nombre"] for r in niv if r["nivel"] == lv and r["codigo"] != "TOTAL"} for lv in ("GET_L1", "GET_L2", "GET_L3")}
-    return {"edicion": "R26", "clases": clases, "grupos": grupos, "get": get}
+    return {"edicion": "2026", "clases": clases, "grupos": grupos, "get": get}
 
 
 # Nombres normalizados del campo ETNIA_1 (variantes de escritura de la misma etiqueta)
@@ -142,6 +145,32 @@ def unidades_capa(clave: str) -> gpd.GeoDataFrame:
         g["nombre"] = g["label"]
         g["categoria"] = attrs.map(lambda a: a.get("categoria", ""))
         g["padre"] = ""
+    elif clave == "cuencas":
+        g["id"] = g["code"]; g["nombre"] = g["label"]; g["padre"] = ""
+        g["categoria"] = "Cuenca hidrográfica"
+    elif clave == "subcuencas":
+        g["id"] = g["code"]; g["nombre"] = g["label"]; g["padre"] = attrs.map(lambda a: a.get("id_cuenca", ""))
+        g["categoria"] = "Subcuenca de " + attrs.map(lambda a: a.get("cuenca", ""))
+    elif clave == "microcuencas":
+        # Identificador oficial de los cruces R26 («territorio» de Microcuenca APR): la capa sigue el mismo orden,
+        # pero los números tienen huecos (hasta 2.062 para 1.928 microcuencas)
+        cr = pd.read_csv(R26 / "Control" / "Indicadores_fichas" / "cruces_territoriales.csv", dtype={"territorio": str})
+        ids = sorted({int(t) for t in cr.loc[cr.capa == "Microcuenca APR", "territorio"]})
+        assert len(ids) == len(g), (len(ids), len(g))
+        g["id"] = [str(i) for i in ids]
+        g["nombre"] = g["label"]
+        g["padre"] = ""
+
+        def cat(a):
+            partes = ["Microcuenca declarada"]
+            if a.get("cuen_hid"):
+                partes.append(f"cuenca {a['cuen_hid']}")
+            if a.get("municipio"):
+                partes.append(f"{a['municipio']}, {a.get('depto', '')}".strip(", "))
+            if a.get("num_acuer"):
+                partes.append(f"{a['num_acuer']}")
+            return " · ".join(partes)
+        g["categoria"] = attrs.map(cat)
     elif clave == "municipios":
         g["id"] = g["code"]; g["nombre"] = g["label"]; g["categoria"] = "Municipio"
         g["padre"] = attrs.map(lambda a: a.get("adm1_pcode", ""))
@@ -225,12 +254,17 @@ def main() -> None:
     (OUT / "clases.json").write_text(json.dumps(cat, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
     codigos = [c["codigo"] for c in cat["clases"]]
 
-    capas = {k: unidades_capa(k) for k in CAPAS}
+    # Sin argumentos se regeneran todas las capas; con argumentos, solo esas (más SINAPH, que se usa para ha_sinaph)
+    pedidas = [a for a in sys.argv[1:] if a in CAPAS] or list(CAPAS)
+    calc = list(dict.fromkeys(["areas_protegidas", "departamentos", *pedidas]))
+    capas = {k: unidades_capa(k) for k in calc}
     cuentas, en_ap = zonal(capas, codigos)
 
     cruces = pd.read_csv(R26 / "Control" / "Indicadores_fichas" / "cruces_territoriales.csv", dtype={"territorio": str})
     control = {}
     for clave, g in capas.items():
+        if clave not in pedidas:
+            continue
         tol = CAPAS[clave][2]
         escribir_geojson(simplificar(g, tol), OUT / "limites" / f"{clave}.geojson", ["id", "nombre", "categoria", "padre"])
         unidades = []
@@ -256,6 +290,8 @@ def main() -> None:
             continue
         ref = cruces[cruces.capa == CAPAS[clave][1]]
         clave_ref = "nombre" if clave == "areas_protegidas" else "territorio"
+        if clave == "microcuencas":
+            ref = ref.assign(territorio=ref["territorio"].astype(str))
         campo = "nombre" if clave == "areas_protegidas" else "id"
         ref_ha = ref.groupby([clave_ref, "codigo"]).hectareas.sum().to_dict()
         mio = {(u[campo], c): h for u in unidades for c, h in u["clases"]}
@@ -277,17 +313,24 @@ def main() -> None:
     escribir_geojson(ctx.to_crs(4326), OUT / "limites" / "contexto.geojson", ["tipo"])
 
     man = {
-        "edicion": "R26", "generado": date.today().isoformat(),
+        "edicion": "2026", "generado": date.today().isoformat(),
         "raster": {"archivo": TIF.name, "sha256": sha256(TIF), "celda_ha": HA},
         "fuentes": {
             "areas_protegidas": "ICF, Geoportal: áreas protegidas declaradas del SINAPH (75 áreas, 324 zonas; fecha de creación más reciente 2025-02-17)",
             "departamentos": "OCHA/HDX, límites administrativos de Honduras, a partir de SINIT/SEPLAN 2010 (CC BY-IGO)",
             "municipios": "OCHA/HDX, límites administrativos de Honduras, a partir de SINIT/SEPLAN 2010 (CC BY-IGO)",
             "pueblos_indigenas": "UICN-Honduras, capa de pueblos indígenas y afrohondureños (30 polígonos, campo ETNIA_1); los polígonos de un mismo pueblo se unen en una unidad",
+            "cuencas": "ICF / territorios del catálogo ecológico: cuencas hidrográficas de Honduras (25 cuencas)",
+            "subcuencas": "ICF / territorios del catálogo ecológico: subcuencas hidrográficas (133 subcuencas)",
+            "microcuencas": "ICF, microcuencas abastecedoras de agua declaradas por acuerdo (1.928 polígonos)",
             "limite_marino": MARINO.name,
         },
         "control_cruces_R26": control,
     }
+    previo = OUT / "manifiesto.json"
+    if pedidas != list(CAPAS) and previo.exists():  # modo parcial: conservar el control de las demás capas
+        viejo = json.loads(previo.read_text(encoding="utf-8")).get("control_cruces_R26", {})
+        man["control_cruces_R26"] = {**viejo, **control}
     (OUT / "manifiesto.json").write_text(json.dumps(man, ensure_ascii=False, indent=2), encoding="utf-8")
     print("listo")
 

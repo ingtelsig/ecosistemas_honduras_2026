@@ -113,7 +113,11 @@ function pintarLista() {
       .map(
         ({ u, sel }) =>
           `<li><button type="button" data-id="${esc(u.id)}" aria-current="${E.sel?.id === u.id}"><span>${esc(u.nombre)}</span><small>${
-            E.capa === "municipios" ? esc(E.deptos.get(u.padre) ?? "") + " · " : E.capa === "areas_protegidas" || E.capa === "pueblos_indigenas" ? esc(u.categoria) + " · " : ""
+            E.capa === "municipios"
+              ? esc(E.deptos.get(u.padre) ?? "") + " · "
+              : E.capa === "areas_protegidas" || E.capa === "pueblos_indigenas" || E.capa === "subcuencas" || E.capa === "microcuencas"
+                ? esc(u.categoria.replace(/^Microcuenca declarada · /, "")) + " · "
+                : ""
           }${filtro ? `${ha(sel)} ha de la selección (${pct((100 * sel) / u.ha)})` : `${ha(u.ha)} ha`}</small></button></li>`,
       )
       .join("") ||
@@ -147,6 +151,8 @@ function contextoDe(u: Unidad): string {
   if (E.capa === "municipios") return `Municipio del departamento de ${E.deptos.get(u.padre) ?? "-"}`;
   if (E.capa === "departamentos") return "Departamento";
   if (E.capa === "pueblos_indigenas") return `${u.categoria} · Pueblos indígenas y afrohondureños de Honduras`;
+  if (E.capa === "cuencas") return "Cuenca hidrográfica";
+  if (E.capa === "subcuencas" || E.capa === "microcuencas") return u.categoria;
   return `${u.categoria} · Sistema Nacional de Áreas Protegidas (SINAPH)`;
 }
 
@@ -207,7 +213,7 @@ function pintarResumen() {
     ${r.clases.length > 10 ? `<button id="btn-mas" class="btn enlace">Ver las ${r.clases.length} clases</button>` : ""}
     ${nacional ? `<p class="nota">Sin unidad seleccionada se muestra el total nacional cartografiado. Elija una unidad en la lista o en el mapa.</p>` : ""}`;
   $("btn-pdf").onclick = () => generarPDF(r);
-  $("btn-csv").onclick = () => descargar(new Blob([csv(r, nombreCapa(u), E.cat)], { type: "text/csv;charset=utf-8" }), `ecosistemas_R26_${slug(u.nombre)}.csv`);
+  $("btn-csv").onclick = () => descargar(new Blob([csv(r, nombreCapa(u), E.cat)], { type: "text/csv;charset=utf-8" }), `ecosistemas_2026_${slug(u.nombre)}.csv`);
   const q = document.getElementById("btn-quitar");
   if (q) q.onclick = () => elegir(null);
   const sf = document.getElementById("btn-sin-filtro");
@@ -229,7 +235,7 @@ async function generarPDF(r: Resumen) {
   try {
     const [{ crearPDF }, mapa] = await Promise.all([import("./reporte"), capturar(E.mapa, E.sel ? E.sel.bbox : null)]);
     const doc = crearPDF({ resumen: r, capaNombre: nombreCapa(r.unidad), contexto: contextoDe(r.unidad), mapa, catalogo: E.cat, manifiesto: E.man });
-    descargar(doc.output("blob"), `Reporte_ecosistemas_R26_${slug(r.unidad.nombre)}.pdf`);
+    descargar(doc.output("blob"), `Reporte_ecosistemas_2026_${slug(r.unidad.nombre)}.pdf`);
   } catch (e) {
     console.error(e);
     aviso("No se pudo generar el PDF. Intente de nuevo.");
@@ -318,8 +324,8 @@ function construirAcerca() {
   const f = E.man.fuentes;
   $("acerca").innerHTML = `
     <h2>Acerca de este geovisor</h2>
-    <p>Presenta el <b>Mapa de Ecosistemas de Honduras, edición R26</b>: 115 clases nacionales en 14 grupos, cartografiadas a 30 m, con su correspondencia a la Tipología Global de Ecosistemas de la UICN.</p>
-    <p>Elija una unidad (área protegida, pueblo indígena, departamento o municipio) para ver qué ecosistemas contiene y descargar su reporte en PDF o sus cifras en CSV. Un clic en el mapa identifica la clase de ecosistema de ese punto.</p>
+    <p>Presenta el <b>Mapa de Ecosistemas de Honduras 2026</b>: 115 clases nacionales en 14 grupos, cartografiadas a 30 m, con su correspondencia a la Tipología Global de Ecosistemas de la UICN.</p>
+    <p>Elija una unidad (área protegida, pueblo indígena, departamento, municipio, cuenca, subcuenca o microcuenca declarada) para ver qué ecosistemas contiene y descargar su reporte en PDF o sus cifras en CSV. Un clic en el mapa identifica la clase de ecosistema de ese punto.</p>
     <h3>Cómo se calculan las superficies</h3>
     <p>Se cuentan las celdas de 30 × 30 m (0,09 ha) del ráster maestro cuyo centro cae dentro de cada unidad. Son superficies cartográficas. Los totales nacionales oficiales aplican un ajuste proporcional por dominio que no se reparte por unidad.</p>
     <h3>Fuentes</h3>
@@ -327,7 +333,9 @@ function construirAcerca() {
       <li>Ecosistemas: ${esc(E.man.raster.archivo)} (sha256 ${E.man.raster.sha256.slice(0, 12)}…).</li>
       <li>Áreas protegidas: ${esc(f.areas_protegidas ?? "")}.</li>
       <li>Departamentos y municipios: ${esc(f.municipios ?? "")}.</li>
-      <li>Pueblos indígenas y afrohondureños: ${esc(f.pueblos_indigenas ?? "")}. La superficie se mide solo dentro del mapa R26 (territorio y espacio marino de Honduras).</li>
+      <li>Pueblos indígenas y afrohondureños: ${esc(f.pueblos_indigenas ?? "")}. La superficie se mide solo dentro del mapa 2026 (territorio y espacio marino de Honduras).</li>
+      <li>Cuencas y subcuencas: ${esc(f.cuencas ?? "")}; ${esc(f.subcuencas ?? "")}.</li>
+      <li>Microcuencas declaradas: ${esc(f.microcuencas ?? "")}. Pueden solaparse; cada una cuenta su superficie completa.</li>
     </ul>
     <p class="nota">Datos generados el ${esc(E.man.generado)}. Esta aplicación es estática: no usa servidores ni servicios externos.</p>`;
 }

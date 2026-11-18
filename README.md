@@ -1,9 +1,9 @@
-# Geovisor de Ecosistemas de Honduras · R26
+# Geovisor del Mapa de Ecosistemas de Honduras 2026
 
-Aplicación web estática que presenta el **Mapa de Ecosistemas de Honduras, edición R26**: 115 clases nacionales en 14 grupos, a 30 m, con su correspondencia a la Tipología Global de Ecosistemas de la UICN (GET).
+Aplicación web estática que presenta el **Mapa de Ecosistemas de Honduras 2026** (revisión interna R26): 115 clases nacionales en 14 grupos, a 30 m, con su correspondencia a la Tipología Global de Ecosistemas de la UICN (GET).
 
 - Mapa con todas las clases. Un clic identifica la clase del punto.
-- Unidades de reporte: áreas protegidas (SINAPH), pueblos indígenas y afrohondureños, departamentos y municipios.
+- Unidades de reporte: áreas protegidas (SINAPH), pueblos indígenas y afrohondureños, departamentos, municipios, cuencas, subcuencas y microcuencas declaradas.
 - Resumen por unidad: superficie, grupos, reinos GET y tabla de clases.
 - Descarga por unidad: **reporte PDF** (mapa, cifras clave, grupos, GET, clases y nota de fuentes) y **CSV**.
 - Filtro de clases y grupos sobre el mapa, y enlaces directos a una unidad (`?capa=municipios&id=HN0801`).
@@ -12,7 +12,7 @@ Aplicación web estática que presenta el **Mapa de Ecosistemas de Honduras, edi
 - El PDF lista las clases presentes por grupo nacional y por jerarquía GET-UICN.
 - Botón **Mapa base**: mapa base propio o mapas base gratuitos de Esri (imágenes satelitales, topográfico, calles, relieve sombreado, gris claro y gris oscuro) y el mosaico **Sentinel-2 sin nubes 2025** de EOX, con control de opacidad del mapa de ecosistemas. La elección se recuerda en el navegador y se aplica también al mapa de comparación y al PDF.
 - **Vista 3D** con el control de terreno de MapLibre (botón bajo el zoom): relieve exagerado ×1,5 y sombreado suave sobre el mapa, también en la comparación. El modelo de elevación son las Terrain Tiles libres de AWS (Mapzen/Tilezen, SRTM).
-- Botón **Puntos de referencia**: los 1.228 puntos del R26 coloreados por fuente y filtrables. Un clic muestra su tabla de atributos (fuente, clases de referencia y del mapa, GET L1–L3, trazabilidad). Los 320 puntos de campo 2026 (CAM) abren su ficha técnica de validación en PDF.
+- Botón **Puntos de referencia**: los 1.228 puntos del mapa en seis grupos de fuentes con símbolos en negro y blanco de formas distintas (triángulo negro para el levantamiento de campo 2026; fotointerpretación de expertos, IFN, hábitats marinos, PMP 2012 y sitios de monitoreo 2000), filtrables por grupo. Un clic muestra su tabla de atributos (fuente, clases de referencia y del mapa, GET L1–L3, trazabilidad). Los 320 puntos de campo 2026 (CAM) abren su ficha técnica de validación en PDF.
 - Las asignaciones múltiples (**MULT**) indican qué reinos, biomas o EFG reúnen: en la leyenda GET, en la ficha de cada clase y en las columnas `GET_L1_categorias`, `GET_L2_categorias` y `GET_L3_categorias` del CSV.
 - Zoom máximo fijado a la escala del mapa, 1:50.000 (escala nominal con píxel de 0,28 mm), que se muestra en la esquina inferior izquierda.
 
@@ -61,6 +61,12 @@ python datos/03_fichas.py
 
 El tercer script necesita además `python-docx` y `Pillow`. Extrae las 115 fichas monográficas de `Catalogos/Catalogo_agrupado_1/CATALOGO_GRUPO_*.docx` y los mapas de distribución de `scripts/work/mapas_fichas/`. El resultado va a `public/data/fichas/`: un JSON por clase y los mapas en WebP. Las fotografías de campo y los gráficos de los catálogos no se copian. El script también limpia las referencias (formato APA, la del estudio INGTELSIG / SERNA / UICN siempre como [1]).
 
+```bash
+python datos/06_revision_fichas.py
+```
+
+Después de `03_fichas.py` se aplica la revisión técnica del catálogo (Miguel Mendieta, noviembre 2026). El script corrige nombres de lugares (PN Blanca Jeannette Kawas Fernández, Laguna de Guaimoreto, Kruta, Guanchias), «km²», «siempreverde», nombres comunes y especies mal asignadas. Por ejemplo, *Quercus acuta*, que viene del IFN y no tiene registros en Honduras, queda como *Quercus* sp. con una nota. También cambia «subsidio» por «aporte» y «potreros secos» por «pastos naturales o cultivados». En 47 unidades añade la sección «Aportes de la revisión técnica» antes de las referencias, con las especies y localidades que propone el revisor. Se puede ejecutar varias veces. Las observaciones de maquetación del catálogo en Word (numeración y ancho de cuadros) no aplican al visor.
+
 ### Capas de comparación (criterios ecológicos y mapa 2002)
 
 ```bash
@@ -75,6 +81,8 @@ Genera `public/data/capas/<id>.pmtiles` y `capas/capas.json`. Se puede pasar una
 
 Cada píxel guarda un índice de 8 bits: en capas continuas es el valor escalado entre un mínimo y un máximo (lineal o raíz cuadrada), en capas de clases es el código. El navegador colorea los índices y los traduce a valores al hacer clic. Las capas continuas llegan hasta zoom 10–11 (≈ 75–150 m por píxel) y las de clases hasta zoom 12.
 
+El piso altitudinal separa montano y altimontano (≥ 2.000 m, umbral de referencia: el mapa los agrupa en un solo piso). Cada capa tiene un botón **i** con su fuente y su uso en la clasificación (campo `uso` de `CAPAS`), y la cobertura 2024 va al final, antes del mapa 2002.
+
 En el visor, el botón «Comparar» abre el selector de capa y una cortina deslizante: a la izquierda el R26, a la derecha la capa elegida. Al hacer clic en el mapa, «Ver criterios ecológicos en este punto» lee el valor de todas las capas en ese lugar.
 
 ### Puntos de referencia y fichas de campo
@@ -84,6 +92,18 @@ python datos/05_puntos_referencia.py
 ```
 
 Lee `Complementos_R26/Puntos_de_referencia_y_superficies_jerarquicas_R26.xlsx` (hojas `Base_Puntos_GET_UICN` y `Trazabilidad_GET_Ref`) y escribe `public/data/puntos/puntos.geojson`. Para los puntos de campo usa el Anexo 1 del Producto 3 (`Fichas_Campo_Individuales`, variable `VALIDACION_DIR`): la base de registros de campo vincula cada CAM-nnn con su ficha (el número del archivo de ficha es el del punto), y el script comprueba código de sitio y municipio antes de copiarla. Las fichas se guardan como `public/data/puntos/fichas/CAM-nnn.pdf` con las fuentes reducidas a los caracteres usados (de 1,3 GB a unos 54 MB, sin tocar las imágenes). No se publican nombres de técnicos ni fotografías aparte de lo que ya trae la ficha oficial.
+
+### Nombre del mapa
+
+«R26» es el número de revisión interno. Los textos públicos (visor, PDF, CSV, fichas y capas) nombran el mapa por su año: **Mapa de Ecosistemas de Honduras 2026**. `datos/texto_2026.py` aplica la regla al escribir las fichas y las capas, y `python datos/texto_2026.py` la vuelve a aplicar sobre los JSON ya generados. Los nombres de archivo y de carpeta (p. ej. `Mapa_Ecosistemas_R26_30m.tif`) no cambian.
+
+### Cuencas, subcuencas y microcuencas declaradas
+
+```bash
+python datos/02_limites_y_resumenes.py cuencas subcuencas microcuencas
+```
+
+Las tres capas vienen de `territorios.gpkg` (`cuencas`, `subcuencas`, `microcuencas_declaradas`). Con argumentos, el script recalcula solo esas capas y conserva el control de las demás en `manifiesto.json`. Las microcuencas se contrastan con los cruces oficiales (`Microcuenca APR`); pueden solaparse y cada una cuenta su superficie completa.
 
 ### Nombres ajustados
 

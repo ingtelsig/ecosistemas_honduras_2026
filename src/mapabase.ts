@@ -1,5 +1,5 @@
 // Mapas base: el propio (sin conexión externa) o los mapas base gratuitos de Esri (servicios de teselas de ArcGIS Online).
-// La capa elegida se coloca debajo del R26 en el mapa principal y en el mapa de comparación.
+// La capa elegida se coloca debajo del 2026 en el mapa principal y en el mapa de comparación.
 import type { Map as MapaML } from "maplibre-gl";
 
 export interface MapaBase {
@@ -48,7 +48,7 @@ export const mapaBaseActual = () => MAPAS_BASE.find((b) => b.id === actual)!;
 
 // Capas del fondo propio que se ocultan bajo un mapa base de Esri
 const PROPIAS = ["mar", "tierra"];
-// La capa base se inserta justo debajo de esta (la del R26 o la de comparación)
+// La capa base se inserta justo debajo de esta (la del 2026 o la de comparación)
 const ENCIMA = ["ecosistemas", "comparacion", "mascara"];
 
 function aplicar(m: MapaML) {

@@ -1,4 +1,4 @@
-// Comparación del mapa R26 con los criterios ecológicos base y con el Mapa de Ecosistemas 2002.
+// Comparación del mapa 2026 con los criterios ecológicos base y con el Mapa de Ecosistemas 2002.
 // Cada capa es un PMTiles con un índice de 8 bits por píxel (canal rojo; 0 = sin dato) que el navegador
 // colorea con su tabla. Un segundo mapa, sincronizado y recortado, muestra la capa al otro lado de una cortina.
 import maplibregl, { addProtocol, type Map as MapaML, type StyleSpecification } from "maplibre-gl";
@@ -16,6 +16,7 @@ export interface CapaCmp {
   nombre: string;
   grupo: string;
   fuente: string;
+  uso?: string;
   tipo: "continua" | "clases";
   zmax: number;
   archivo: string;
@@ -231,7 +232,7 @@ function crearEspejo() {
   // cortina arrastrable
   el.cortina = document.createElement("div");
   el.cortina.className = "cortina";
-  el.cortina.innerHTML = `<span class="cort-lado izq">R26</span><button type="button" class="cort-asa" aria-label="Mover la cortina de comparación" title="Arrastra para comparar">⇔</button><span class="cort-lado der"></span>`;
+  el.cortina.innerHTML = `<span class="cort-lado izq">Ecosistemas 2026</span><button type="button" class="cort-asa" aria-label="Mover la cortina de comparación" title="Arrastra para comparar">⇔</button><span class="cort-lado der"></span>`;
   el.etiq = el.cortina.querySelector(".der")!;
   cont.appendChild(el.cortina);
   const asa = el.cortina.querySelector<HTMLButtonElement>(".cort-asa")!;
@@ -310,7 +311,7 @@ function elegir(id: string) {
   el.capaEspejo.hidden = false;
   el.cortina.hidden = completa;
   el.etiq.textContent = activa!.nombre;
-  el.leyenda.innerHTML = `${leyendaHTML(activa!)}<p class="cmp-fuente"><b>Fuente:</b> ${esc(activa!.fuente)}</p>${activa!.nota ? `<p class="cmp-fuente">${esc(activa!.nota)}</p>` : ""}`;
+  el.leyenda.innerHTML = `${leyendaHTML(activa!)}<p class="cmp-fuente"><b>Fuente:</b> ${esc(activa!.fuente)}</p>${activa!.uso ? `<p class="cmp-fuente"><b>Uso en la clasificación:</b> ${esc(activa!.uso)}</p>` : ""}${activa!.nota ? `<p class="cmp-fuente">${esc(activa!.nota)}</p>` : ""}`;
   sincronizar();
   espejo!.resize();
   recortar();
@@ -356,11 +357,17 @@ export async function iniciarComparacion(mapa: MapaML) {
     <button type="button" class="cmp-sel" aria-expanded="true" aria-controls="cmp-lista"><span>Elige una capa</span><span class="cmp-flecha" aria-hidden="true">▾</span></button>
     <div id="cmp-lista" class="cmp-lista" role="radiogroup" aria-label="Capa de comparación">
       <label class="cmp-op"><input type="radio" name="cmp-capa" value="" checked> Ninguna</label>${grupos
-        .map((g) => `<p class="cmp-grupo">${esc(g)}</p>${lista.filter((c) => c.grupo === g).map((c) => `<label class="cmp-op"><input type="radio" name="cmp-capa" value="${c.id}"> ${esc(c.nombre)}</label>`).join("")}`)
+        .map((g) => `<p class="cmp-grupo">${esc(g)}</p>${lista
+          .filter((c) => c.grupo === g)
+          .map(
+            (c) => `<div class="cmp-fila"><label class="cmp-op"><input type="radio" name="cmp-capa" value="${c.id}"> ${esc(c.nombre)}</label><button type="button" class="info cmp-info" data-info="${c.id}" aria-expanded="false" aria-label="Fuente y uso de ${esc(c.nombre)}" title="Fuente y uso en la clasificación">i</button></div>
+              <div class="cmp-info-txt" data-info-txt="${c.id}" hidden><p><b>Fuente:</b> ${esc(c.fuente)}</p>${c.uso ? `<p><b>Uso en la clasificación:</b> ${esc(c.uso)}</p>` : ""}${c.nota ? `<p>${esc(c.nota)}</p>` : ""}</div>`,
+          )
+          .join("")}`)
         .join("")}
     </div>
     <label class="cmp-completa"><input type="checkbox"> Ver la capa completa (sin cortina)</label>
-    <p class="cmp-ayuda">Arrastra la cortina: a la izquierda el mapa R26, a la derecha la capa elegida. Al hacer clic en el mapa verás el valor de todos los criterios en ese punto.</p>
+    <p class="cmp-ayuda">Arrastra la cortina: a la izquierda el Mapa de Ecosistemas 2026, a la derecha la capa elegida. Al hacer clic en el mapa verás el valor de todos los criterios en ese punto.</p>
     <div class="cmp-leyenda"></div>`;
   cont.appendChild(el.panel);
   el.sel = el.panel.querySelector(".cmp-sel")!;
@@ -370,6 +377,14 @@ export async function iniciarComparacion(mapa: MapaML) {
     el.sel.setAttribute("aria-expanded", String(abrir));
   };
   el.sel.addEventListener("click", () => desplegar(el.lista.hidden));
+  el.panel.querySelectorAll<HTMLButtonElement>(".cmp-info").forEach((b) =>
+    b.addEventListener("click", (ev) => {
+      ev.preventDefault();
+      const t = el.panel.querySelector<HTMLElement>(`[data-info-txt="${b.dataset.info}"]`)!;
+      t.hidden = !t.hidden;
+      b.setAttribute("aria-expanded", String(!t.hidden));
+    }),
+  );
   el.leyenda = el.panel.querySelector(".cmp-leyenda")!;
   el.completa = el.panel.querySelector(".cmp-completa input")!;
   el.lista.addEventListener("change", (ev) => {

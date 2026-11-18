@@ -10,6 +10,9 @@ Las figuras y la galería de fotos de campo no se copian; solo el mapa de distri
 """
 from __future__ import annotations
 
+import sys as _sys
+_sys.path.insert(0, str(__import__('pathlib').Path(__file__).resolve().parent))
+from texto_2026 import a_2026_obj  # «R26» -> «2026» en los textos públicos
 import html
 import json
 import os
@@ -395,7 +398,7 @@ def main() -> None:
                     im.thumbnail((960, 960))
                     im.save(OUT / "mapas" / f"{cod}.webp", "WEBP", quality=78, method=6)
                 salida["mapa"] = f"fichas/mapas/{cod}.webp"
-            (OUT / f"{cod}.json").write_text(json.dumps(salida, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+            (OUT / f"{cod}.json").write_text(json.dumps(a_2026_obj(salida), ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
             indice[cod] = p.stem
             n += 1
         print(f"{p.name}: {n} fichas", flush=True)
