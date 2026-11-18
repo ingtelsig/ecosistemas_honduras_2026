@@ -29,6 +29,8 @@ CTX = Path(os.environ.get("CONTEXTO_MAPA", "D:/web_D_anctigravity/analisis_ecosi
 PNG = AQUI / "raster" / "mapas_fichas"
 WEBP = AQUI.parent / "public" / "data" / "fichas" / "mapas"
 ROTULO = "Honduras  ·  2026  ·  UTM 16N"
+LAGOS = (6111, 6112, 6113)  # se dibujan por densidad, sobre la red fluvial
+RIOS = (6061, 6062, 6063, 6064, 6065)
 
 style = {int(e.get("value")): e.attrib for e in ET.parse(GEO / "Mapa_Ecosistemas_R26_30m.qml").findall(".//paletteEntry")}
 with (GEO / "Superficies_R25_R26.csv").open(encoding="utf-8-sig", newline="") as f:
@@ -126,11 +128,22 @@ def render(k):
     v = np.floor((t - y0 + (pos // width + .5) * 300) / scale).astype(np.int32)
     presence = np.zeros((H, PW), np.uint8)
     np.maximum.at(presence, (v, u), counts)
-    presence = (presence > 0).astype(np.uint8) * 255
-    if int((presence > 0).sum()) < 110:
-        presence = np.asarray(Image.fromarray(presence).filter(ImageFilter.MaxFilter(3)))
     arr = np.array(panel)
-    arr[presence > 0] = ImageColor.getrgb(style[k]["color"])
+    if k in LAGOS:
+        # lagos: la red fluvial en azul pálido de contexto y cada bloque de 300 m con una intensidad según la fracción
+        # ocupada (100 celdas = bloque lleno), para que las lagunas pequeñas en fila no se lean como un río
+        rp, rc = (np.concatenate(x) for x in zip(*[hits[r] for r in RIOS if r in hits]))
+        ru = np.floor((x0 + (rp % width + .5) * 300 - l) / scale).astype(np.int32)
+        rv = np.floor((t - y0 + (rp // width + .5) * 300) / scale).astype(np.int32)
+        ok = (ru >= 0) & (ru < PW) & (rv >= 0) & (rv < H)
+        arr[rv[ok], ru[ok]] = ImageColor.getrgb("#b7d3e2")
+        a = np.clip(0.35 + 0.65 * presence / 50.0, 0, 1)[..., None] * (presence > 0)[..., None]
+        arr[:] = (arr * (1 - a) + np.array(ImageColor.getrgb(style[k]["color"])) * a).astype(np.uint8)
+    else:
+        presence = (presence > 0).astype(np.uint8) * 255
+        if int((presence > 0).sum()) < 110:
+            presence = np.asarray(Image.fromarray(presence).filter(ImageFilter.MaxFilter(3)))
+        arr[presence > 0] = ImageColor.getrgb(style[k]["color"])
     canvas.paste(Image.fromarray(arr), (M, 22))
     draw.rectangle((M, 22, M + PW, 22 + H), outline="#8fa8aa", width=1)
     draw.text((M + PW - 45, 42), "N", font=font(24, True), fill=INK)
@@ -153,6 +166,7 @@ def render(k):
 
 PNG.mkdir(parents=True, exist_ok=True)
 WEBP.mkdir(parents=True, exist_ok=True)
-for k in codes:
+import sys
+for k in [int(a) for a in sys.argv[1:]] or codes:
     render(k)
 print(f"{len(codes)} mapas de clase dibujados desde {TIF.name}")
