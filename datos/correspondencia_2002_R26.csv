@@ -6,7 +6,7 @@
 5,"Arbustal deciduo microlatifoliado de tierras bajas, bien drenado",IIIB2b(a),16546.3,629,Bosque latifoliado abierto y/o perturbado,21.1,4034,"Arbustal seco / deciduo, bien drenado",5.5,629,#6f965d
 6,Area urbana,U1,30798.7,10001,Ecosistemas urbanos e industriales,64.2,10001,Ecosistemas urbanos e industriales,64.2,10001,#f90602
 7,Arrecife  coralino del Caribe,,6600.9,616,Arrecifes de coral fóticos,33.0,616,Arrecifes de coral fóticos,33.0,616,#44cbba
-8,Banco arenoso intermareal o permanentemente emergido,VIB3c,156.6,16201,Zona marina potencial Z1 de la fuente publicada,42.4,16203,Zona marina potencial Z3 de la fuente publicada,24.6,16201,#40c5fd
+8,Banco arenoso intermareal o permanentemente emergido,VIB3c,156.6,16201,Zona marina potencial sobre fondos de hasta 200 m,42.4,16203,Zona marina potencial sobre fondos de 1.000–3.000 m,24.6,16201,#40c5fd
 9,"Boque tropical siempreverde estacional aciculifoliado, submontano",IA2b(2),991040.0,602,Bosque de pino ralo o sabana de pino (seco o subhúmedo),25.6,602,Bosque de pino ralo o sabana de pino (seco o subhúmedo),25.6,602,#f1ece6
 10,Boque tropical siempreverde latifoliado montano superior,IA1d(1)(a),122439.0,1234,"Bosque latifoliado estacional / semideciduo, montano / altimontano, bien drenado",37.2,1234,"Bosque latifoliado estacional / semideciduo, montano / altimontano, bien drenado",37.2,1234,#52b05d
 11,"Boque tropical simpreverde estacional latifoliado de tierras bajas, moderadamente drenado",IA1a(1)(b),4390.6,1112,"Bosque latifoliado pluvial / siempreverde, tierras bajas, aluvial o mal drenado",38.6,1112,"Bosque latifoliado pluvial / siempreverde, tierras bajas, aluvial o mal drenado",38.6,1112,#083319
@@ -52,7 +52,7 @@
 51,Estuario abierto del Caribe,SA1c(1)(b),5233.7,6151,Esteros marinos y canales de marea,45.0,6151,Esteros marinos y canales de marea,45.0,6151,#530ee5
 52,Estuario semicerrado del Pacífico,SA1c(2)(a),15357.2,6151,Esteros marinos y canales de marea,92.4,6151,Esteros marinos y canales de marea,92.4,6151,#530ee5
 53,"Herbazal pantanoso con gramíneas, palmas y/o arbustos",VC1a(6)g,42873.6,8306,Plantación industrial de palma africana,45.5,630,Humedal palustrino herbáceo / Sabana inundable,9.9,8306,#f1a6bd
-54,Lago del interior,SA1b(4)(c),16885.2,6111,Lagos permanentes de agua dulce de mayor tamaño nacional,45.4,6111,Lagos permanentes de agua dulce de mayor tamaño nacional,45.4,6111,#414d9f
+54,Lago del interior,SA1b(4)(c),16885.2,6111,Lagos permanentes de agua dulce de mayor tamaño en Honduras,45.4,6111,Lagos permanentes de agua dulce de mayor tamaño en Honduras,45.4,6111,#414d9f
 55,Laguna costera  de agua dulce del Caribe,SA1b(4)(b),15308.0,615,Laguna costera o estuario,83.8,615,Laguna costera o estuario,83.8,615,#530ee5
 56,Laguna o canal costero de agua salobre del Caribe,SA1b(5),118497.0,615,Laguna costera o estuario,97.9,615,Laguna costera o estuario,97.9,615,#530ee5
 57,Pantano de ciperáceas altas,VD1a,18160.2,630,Humedal palustrino herbáceo / Sabana inundable,36.7,630,Humedal palustrino herbáceo / Sabana inundable,36.7,630,#96fedb
