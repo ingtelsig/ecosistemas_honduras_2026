@@ -5,15 +5,24 @@ import type { Map as MapaML } from "maplibre-gl";
 export interface MapaBase {
   id: string;
   nombre: string;
-  servicios: string[]; // servicios de ArcGIS Online, de abajo arriba (p. ej. imágenes + nombres)
+  servicios: string[]; // servicios de ArcGIS Online o URL completas de teselas {z}/{y}/{x}, de abajo arriba (p. ej. imágenes + nombres)
   atribucion: string;
   oscuro?: boolean;
 }
 
 const ESRI = "https://server.arcgisonline.com/ArcGIS/rest/services";
+const S2 = "https://tiles.maps.eox.at/wmts/1.0.0";
 export const MAPAS_BASE: MapaBase[] = [
   { id: "propio", nombre: "Mapa base propio (sin conexión externa)", servicios: [], atribucion: "" },
   { id: "imagenes", nombre: "Imágenes satelitales", servicios: ["World_Imagery", "Reference/World_Boundaries_and_Places"], atribucion: "Esri, Maxar, Earthstar Geographics y la comunidad de usuarios de SIG", oscuro: true },
+  {
+    id: "sentinel2",
+    nombre: "Sentinel-2 sin nubes 2025 (EOX)",
+    servicios: [`${S2}/s2cloudless-2025_3857/default/g/{z}/{y}/{x}.jpg`, "Reference/World_Boundaries_and_Places"],
+    atribucion:
+      '<a href="https://s2maps.eu" target="_blank" rel="noopener">Sentinel-2 cloudless 2025</a> de <a href="https://eox.at" target="_blank" rel="noopener">EOX IT Services GmbH</a> (contiene datos modificados de Copernicus Sentinel 2025), <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank" rel="noopener">CC BY-NC-SA 4.0</a>; nombres y límites: Esri',
+    oscuro: true,
+  },
   { id: "topografico", nombre: "Topográfico", servicios: ["World_Topo_Map"], atribucion: "Esri, HERE, Garmin, FAO, NOAA, USGS y colaboradores" },
   { id: "calles", nombre: "Calles", servicios: ["World_Street_Map"], atribucion: "Esri, HERE, Garmin, USGS, NGA y colaboradores" },
   { id: "relieve", nombre: "Relieve sombreado", servicios: ["Elevation/World_Hillshade"], atribucion: "Esri, Airbus, USGS, NGA, NASA, CGIAR, NLS, OS, NMA, Geodatastyrelsen, GSA, GSI y la comunidad de usuarios de SIG" },
@@ -52,9 +61,9 @@ function aplicar(m: MapaML) {
     const id = `base-${i}`;
     m.addSource(id, {
       type: "raster",
-      tiles: [`${ESRI}/${s}/MapServer/tile/{z}/{y}/{x}`],
+      tiles: [s.startsWith("https://") ? s : `${ESRI}/${s}/MapServer/tile/{z}/{y}/{x}`],
       tileSize: 256,
-      maxzoom: 19,
+      maxzoom: s.startsWith("https://") ? 15 : 19,
       attribution: i === 0 ? `Mapa base: ${b.atribucion} · Powered by Esri` : undefined,
     });
     m.addLayer({ id, type: "raster", source: id, paint: { "raster-fade-duration": 0 } }, antes);
@@ -105,7 +114,7 @@ export class ControlMapaBase {
       ).join("")}</div>
       <label class="mb-opacidad">Opacidad del mapa de ecosistemas <output>${op} %</output>
         <input type="range" min="0" max="100" step="5" value="${op}"></label>
-      <p class="cmp-ayuda">Los mapas base de Esri se cargan desde ArcGIS Online y necesitan conexión a internet.</p>`;
+      <p class="cmp-ayuda">Los mapas base de Esri y EOX se cargan desde sus servidores y necesitan conexión a internet.</p>`;
     m.getContainer().parentElement!.appendChild(this.panel);
 
     const abrir = (si: boolean) => {
