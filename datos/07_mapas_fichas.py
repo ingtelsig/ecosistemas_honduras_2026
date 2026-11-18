@@ -29,8 +29,7 @@ CTX = Path(os.environ.get("CONTEXTO_MAPA", "D:/web_D_anctigravity/analisis_ecosi
 PNG = AQUI / "raster" / "mapas_fichas"
 WEBP = AQUI.parent / "public" / "data" / "fichas" / "mapas"
 ROTULO = "Honduras  ·  2026  ·  UTM 16N"
-LAGOS = (6111, 6112, 6113)  # se dibujan por densidad, sobre la red fluvial
-RIOS = (6061, 6062, 6063, 6064, 6065)
+LAGOS = (6111, 6112, 6113)  # se dibujan por densidad
 
 style = {int(e.get("value")): e.attrib for e in ET.parse(GEO / "Mapa_Ecosistemas_R26_30m.qml").findall(".//paletteEntry")}
 with (GEO / "Superficies_R25_R26.csv").open(encoding="utf-8-sig", newline="") as f:
@@ -130,14 +129,9 @@ def render(k):
     np.maximum.at(presence, (v, u), counts)
     arr = np.array(panel)
     if k in LAGOS:
-        # lagos: la red fluvial en azul pálido de contexto y cada bloque de 300 m con una intensidad según la fracción
-        # ocupada (100 celdas = bloque lleno), para que las lagunas pequeñas en fila no se lean como un río
-        rp, rc = (np.concatenate(x) for x in zip(*[hits[r] for r in RIOS if r in hits]))
-        ru = np.floor((x0 + (rp % width + .5) * 300 - l) / scale).astype(np.int32)
-        rv = np.floor((t - y0 + (rp // width + .5) * 300) / scale).astype(np.int32)
-        ok = (ru >= 0) & (ru < PW) & (rv >= 0) & (rv < H)
-        arr[rv[ok], ru[ok]] = ImageColor.getrgb("#b7d3e2")
-        a = np.clip(0.35 + 0.65 * presence / 50.0, 0, 1)[..., None] * (presence > 0)[..., None]
+        # lagos: cada bloque de 300 m con una intensidad según la fracción ocupada (100 celdas = bloque lleno), para que
+        # las lagunas pequeñas en fila no se lean como un río. Sin red fluvial de fondo: en azul se confundía con el lago.
+        a =np.clip(0.35 + 0.65 * presence / 50.0, 0, 1)[..., None] * (presence > 0)[..., None]
         arr[:] = (arr * (1 - a) + np.array(ImageColor.getrgb(style[k]["color"])) * a).astype(np.uint8)
     else:
         presence = (presence > 0).astype(np.uint8) * 255
