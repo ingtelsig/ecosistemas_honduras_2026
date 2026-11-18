@@ -30,6 +30,9 @@ PNG = AQUI / "raster" / "mapas_fichas"
 WEBP = AQUI.parent / "public" / "data" / "fichas" / "mapas"
 ROTULO = "Honduras  ·  2026  ·  UTM 16N"
 LAGOS = (6111, 6112, 6113)  # se dibujan por densidad
+# litorales: franjas de decenas de metros; a la escala de la ficha se engrosan (bloque de 300 m dilatado) y los arenosos,
+# cuyo color oficial casi no se distingue del fondo de tierra, llevan además un contorno arena
+LITORAL = {9101: "#b08a4a", 9102: "#b08a4a", 631: None, 636: None}
 
 style = {int(e.get("value")): e.attrib for e in ET.parse(GEO / "Mapa_Ecosistemas_R26_30m.qml").findall(".//paletteEntry")}
 with (GEO / "Superficies_R25_R26.csv").open(encoding="utf-8-sig", newline="") as f:
@@ -133,6 +136,12 @@ def render(k):
         # las lagunas pequeñas en fila no se lean como un río. Sin red fluvial de fondo: en azul se confundía con el lago.
         a =np.clip(0.35 + 0.65 * presence / 50.0, 0, 1)[..., None] * (presence > 0)[..., None]
         arr[:] = (arr * (1 - a) + np.array(ImageColor.getrgb(style[k]["color"])) * a).astype(np.uint8)
+    elif k in LITORAL:
+        fill = np.asarray(Image.fromarray((presence > 0).astype(np.uint8) * 255).filter(ImageFilter.MaxFilter(5))) > 0
+        if LITORAL[k]:
+            halo = np.asarray(Image.fromarray(fill.astype(np.uint8) * 255).filter(ImageFilter.MaxFilter(5))) > 0
+            arr[halo & ~fill] = ImageColor.getrgb(LITORAL[k])
+        arr[fill] = ImageColor.getrgb(style[k]["color"])
     else:
         presence = (presence > 0).astype(np.uint8) * 255
         if int((presence > 0).sum()) < 110:
@@ -150,8 +159,11 @@ def render(k):
     draw.text((M, y + 11), "0", font=font(19), fill=INK)
     draw.text((M + length - 20, y + 11), "100 km", font=font(19), fill=INK)
     draw.text((M + PW, y + 11), ROTULO, anchor="ra", font=font(19), fill=INK)
-    draw.rectangle((M, y + 45, M + 22, y + 65), fill=style[k]["color"], outline="#839394", width=1)
+    draw.rectangle((M, y + 45, M + 22, y + 65), fill=style[k]["color"], outline=LITORAL.get(k) or "#839394", width=2 if LITORAL.get(k) else 1)
     draw.text((M + 30, y + 42), str(k), font=font(19, True), fill=INK)
+    if k in LITORAL:
+        draw.text((M + 30 + draw.textlength(str(k), font=font(19, True)) + 12, y + 44),
+                  "franja costera engrosada para la escala del mapa", font=font(16), fill="#5b6b6d")
     canvas.save(PNG / f"{k}.png")
     im = canvas.copy()
     im.thumbnail((960, 960))
