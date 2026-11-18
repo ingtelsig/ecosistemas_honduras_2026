@@ -1,7 +1,7 @@
 // Catálogo de fichas monográficas por unidad ecosistémica (generadas por datos/03_fichas.py desde los catálogos R26).
 import { ha, pct, url, type Catalogo, type Clase, type Unidad } from "./datos";
 import { claseDe } from "./resumen";
-import { nombreGET, rutaGET } from "./leyenda";
+import { categoriasGET, nombreGET, rutaGET } from "./leyenda";
 
 interface Bloque {
   t: "h2" | "h3" | "p" | "li" | "nota" | "tabla";
@@ -118,7 +118,11 @@ export function actualizarUnidadFicha(u: Unidad | null) {
 function cabecera(c: Clase): string {
   const [g1, g2, g3, contextual] = rutaGET(c);
   const get = [g1, g2, g3]
-    .map((cod, i) => `<span title="${esc(nombreGET(ctx.cat, i as 0 | 1 | 2, cod))}">${cod === "MULT" ? "Varios" : esc(cod)}</span>`)
+    .map((cod, i) => {
+      if (cod !== "MULT") return `<span title="${esc(nombreGET(ctx.cat, i as 0 | 1 | 2, cod))}">${esc(cod)}</span>`;
+      const k = categoriasGET(c, i as 0 | 1 | 2);
+      return `<span title="${esc(k.map((x) => `${x} ${nombreGET(ctx.cat, i as 0 | 1 | 2, x)}`).join("\n"))}">Varios (${esc(k.join(", "))})</span>`;
+    })
     .join(" › ");
   const grupo = ctx.cat.grupos.find((g) => g.codigo === c.grupo);
   const u = ctx.unidad;

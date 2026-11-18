@@ -11,9 +11,12 @@ Aplicación web estática que presenta el **Mapa de Ecosistemas de Honduras, edi
 - Catálogo de fichas de las 115 unidades ecosistémicas. Se abre desde la pestaña Catálogo o con el botón **i** junto a cada clase: en la leyenda, en la tabla del resumen y en la consulta por clic.
 - El PDF lista las clases presentes por grupo nacional y por jerarquía GET-UICN.
 - Botón **Mapa base**: mapa base propio o mapas base gratuitos de Esri (imágenes satelitales, topográfico, calles, relieve sombreado, gris claro y gris oscuro) y el mosaico **Sentinel-2 sin nubes 2025** de EOX, con control de opacidad del mapa de ecosistemas. La elección se recuerda en el navegador y se aplica también al mapa de comparación y al PDF.
+- **Vista 3D** con el control de terreno de MapLibre (botón bajo el zoom): relieve exagerado ×1,5 y sombreado suave sobre el mapa, también en la comparación. El modelo de elevación son las Terrain Tiles libres de AWS (Mapzen/Tilezen, SRTM).
+- Botón **Puntos de referencia**: los 1.228 puntos del R26 coloreados por fuente y filtrables. Un clic muestra su tabla de atributos (fuente, clases de referencia y del mapa, GET L1–L3, trazabilidad). Los 320 puntos de campo 2026 (CAM) abren su ficha técnica de validación en PDF.
+- Las asignaciones múltiples (**MULT**) indican qué reinos, biomas o EFG reúnen: en la leyenda GET, en la ficha de cada clase y en las columnas `GET_L1_categorias`, `GET_L2_categorias` y `GET_L3_categorias` del CSV.
 - Zoom máximo fijado a la escala del mapa, 1:50.000 (escala nominal con píxel de 0,28 mm), que se muestra en la esquina inferior izquierda.
 
-No necesita servidores propios. El mapa base por defecto se dibuja con los límites del proyecto, y el ráster va en un único archivo PMTiles que se lee por rangos HTTP. Los mapas base opcionales se cargan desde los servicios de teselas de ArcGIS Online (`server.arcgisonline.com`) y de EOX (`tiles.maps.eox.at`, Sentinel-2 cloudless 2025, licencia CC BY-NC-SA 4.0: uso no comercial), con su atribución; están en `src/mapabase.ts`. Cuando EOX publique el mosaico de un año nuevo basta con cambiar el año en la URL de ese archivo.
+No necesita servidores propios. El mapa base por defecto se dibuja con los límites del proyecto, y el ráster va en un único archivo PMTiles que se lee por rangos HTTP. El relieve 3D se lee de `elevation-tiles-prod.s3.amazonaws.com`. Los mapas base opcionales se cargan desde los servicios de teselas de ArcGIS Online (`server.arcgisonline.com`) y de EOX (`tiles.maps.eox.at`, Sentinel-2 cloudless 2025, licencia CC BY-NC-SA 4.0: uso no comercial), con su atribución; están en `src/mapabase.ts`. Cuando EOX publique el mosaico de un año nuevo basta con cambiar el año en la URL de ese archivo.
 
 ## Estructura
 
@@ -74,6 +77,14 @@ Cada píxel guarda un índice de 8 bits: en capas continuas es el valor escalado
 
 En el visor, el botón «Comparar» abre el selector de capa y una cortina deslizante: a la izquierda el R26, a la derecha la capa elegida. Al hacer clic en el mapa, «Ver criterios ecológicos en este punto» lee el valor de todas las capas en ese lugar.
 
+### Puntos de referencia y fichas de campo
+
+```bash
+python datos/05_puntos_referencia.py
+```
+
+Lee `Complementos_R26/Puntos_de_referencia_y_superficies_jerarquicas_R26.xlsx` (hojas `Base_Puntos_GET_UICN` y `Trazabilidad_GET_Ref`) y escribe `public/data/puntos/puntos.geojson`. Para los puntos de campo usa el Anexo 1 del Producto 3 (`Fichas_Campo_Individuales`, variable `VALIDACION_DIR`): la base de registros de campo vincula cada CAM-nnn con su ficha (el número del archivo de ficha es el del punto), y el script comprueba código de sitio y municipio antes de copiarla. Las fichas se guardan como `public/data/puntos/fichas/CAM-nnn.pdf` con las fuentes reducidas a los caracteres usados (de 1,3 GB a unos 54 MB, sin tocar las imágenes). No se publican nombres de técnicos ni fotografías aparte de lo que ya trae la ficha oficial.
+
 ### Nombres ajustados
 
 `datos/nombres_ajustados.json` cambia el nombre de 8 clases en el geovisor (1322–1324, 1332–1334, 8132 y 8133): «seco» pasa a «estacional (semideciduo a deciduo)». Estas clases tienen la misma elevación y lluvia que sus pares estacionales; las separa la mayor deciduidad del dosel (EVI2). Los códigos y superficies R26 no cambian. Lo leen `02_limites_y_resumenes.py` (para `clases.json`) y `03_fichas.py`, que además ajusta las frases de las fichas que describían la unidad como seca y añade una nota de ajuste al inicio de cada una.
@@ -95,7 +106,7 @@ La capa está en `datos/fuentes/pueblos_indigenas/Pueblos indigenas.shp`: 30 pol
 2. En el repositorio, ir a **Settings → Pages → Source** y elegir **GitHub Actions**.
 3. Cada `push` a `main` ejecuta `.github/workflows/pages.yml`, que compila y publica.
 
-Límites de GitHub Pages: el sitio publicado no puede pasar de 1 GB y ningún archivo de 100 MB. Este sitio ocupa unos 67 MB.
+Límites de GitHub Pages: el sitio publicado no puede pasar de 1 GB y ningún archivo de 100 MB. Este sitio ocupa unos 280 MB.
 
 ## Fuentes
 

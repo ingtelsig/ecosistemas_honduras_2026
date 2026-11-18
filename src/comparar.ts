@@ -5,6 +5,8 @@ import maplibregl, { addProtocol, type Map as MapaML, type StyleSpecification } 
 import { PMTiles } from "pmtiles";
 import { url } from "./datos";
 import { registrarMapaBase } from "./mapabase";
+import { registrarRelieve } from "./relieve3d";
+import { registrarPuntos } from "./puntos";
 
 const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
 
@@ -75,8 +77,11 @@ function indicesTesela(id: string, z: number, x: number, y: number): Promise<Uin
   let p = cache.get(k);
   if (!p) {
     p = (async () => {
+      if (!porId.has(id)) await cargarCapas(); // tesela pedida antes de leer el catálogo de capas
+      const capa = porId.get(id);
+      if (!capa) return null;
       let pm = archivos.get(id);
-      if (!pm) archivos.set(id, (pm = new PMTiles(url(porId.get(id)!.archivo))));
+      if (!pm) archivos.set(id, (pm = new PMTiles(url(capa.archivo))));
       const r = await pm.getZxy(z, x, y);
       if (!r) return null;
       const bmp = await createImageBitmap(new Blob([r.data], { type: "image/png" }), { premultiplyAlpha: "none", colorSpaceConversion: "none" });
@@ -216,6 +221,8 @@ function crearEspejo() {
     maxZoom: principal.getMaxZoom(),
   });
   registrarMapaBase(espejo);
+  registrarRelieve(espejo);
+  registrarPuntos(espejo);
   principal.on("move", sincronizar);
   principal.on("resize", () => {
     espejo?.resize();
@@ -327,7 +334,7 @@ class ControlComparar implements maplibregl.IControl {
     el.btn.addEventListener("click", () => {
       const abrir = el.panel.hidden;
       el.panel.hidden = !abrir;
-      if (abrir) document.querySelectorAll<HTMLElement>(".mb-panel").forEach((p) => (p.hidden = true));
+      if (abrir) document.querySelectorAll<HTMLElement>(".mb-panel, .pt-panel").forEach((p) => (p.hidden = true));
       el.btn.setAttribute("aria-expanded", String(abrir));
     });
     d.appendChild(el.btn);

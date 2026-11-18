@@ -16,12 +16,30 @@ const NOMBRE_MULT = ["Varios reinos", "Varios biomas", "Varios grupos funcionale
 
 // Nombres de EFG que no tienen ninguna clase con membresía (p. ej. M3.4, solo contextual para la 635)
 let nombresEFG: Map<string, string> | null = null;
+let catActual: Catalogo | null = null;
 
 export function nombreGET(cat: Catalogo, nivel: 0 | 1 | 2, cod: string): string {
   if (cod === "MULT") return `${NOMBRE_MULT[nivel]} · pendiente de reparto`;
   if (cod === "SIN_GET") return "Sin correspondencia de membresía";
   nombresEFG ??= new Map(cat.clases.flatMap((c) => c.efg.map((e) => [e[0], e[1]] as [string, string])));
   return cat.get[(["GET_L1", "GET_L2", "GET_L3"] as const)[nivel]][cod] ?? nombresEFG.get(cod) ?? cod;
+}
+
+/** Códigos GET que reúne la clase en un nivel (0 reino, 1 bioma, 2 EFG), a partir de sus correspondencias EFG. */
+export function categoriasGET(c: Clase, nivel: 0 | 1 | 2): string[] {
+  const cods = c.efg.map((e) => {
+    const efg = e[0]; // p. ej. "TF1.4"
+    const bioma = efg.split(".")[0];
+    return nivel === 2 ? efg : nivel === 1 ? bioma : bioma.replace(/\d+$/, "");
+  });
+  return [...new Set(cods)];
+}
+
+/** «T4.2 Sabanas… | T1.3 Bosques…»: categorías incluidas en un nivel MULT (o la única, si no lo es). */
+export function detalleGET(cat: Catalogo, c: Clase, nivel: 0 | 1 | 2): string {
+  const cod = [c.get1, c.get2, c.get3][nivel];
+  const cods = cod === "MULT" ? categoriasGET(c, nivel) : [cod];
+  return cods.map((k) => (k === "SIN_GET" ? nombreGET(cat, nivel, k) : `${k} ${nombreGET(cat, nivel, k)}`)).join(" | ");
 }
 
 /**
@@ -52,14 +70,17 @@ export function arbolGET(clases: Clase[]): ArbolGET {
   return ord(new Map([...a].map(([k1, b]) => [k1, ord(new Map([...b].map(([k2, e]) => [k2, ord(e)])))])));
 }
 
-function claseLi(c: Clase): string {
+function claseLi(c: Clase, nivelMult: -1 | 0 | 1 | 2 = -1): string {
   const contextual = rutaGET(c)[3];
+  const mult = nivelMult >= 0 ? categoriasGET(c, nivelMult as 0 | 1 | 2) : [];
   const rel = c.efg.map((e) => `${e[0]} ${e[1]}${e[2] ? " (principal)" : ""}`).join("\n");
   const titulo = contextual
     ? `Relación contextual con ${rel}. No es membresía: en las superficies R26 figura como «Sin correspondencia de membresía».`
     : rel ? `Correspondencias EFG:\n${rel}` : "";
   return `<li data-li="${c.codigo}" class="${contextual ? "contextual" : ""}" title="${esc(titulo)}"><label><input type="checkbox" data-clase="${c.codigo}" checked>
-    <i style="background:${c.color}"></i><span><b>${c.codigo}</b> ${esc(c.nombre)}${contextual ? ' <em class="marca-ctx">relación contextual</em>' : ""}</span></label>${botonInfo(c)}</li>`;
+    <i style="background:${c.color}"></i><span><b>${c.codigo}</b> ${esc(c.nombre)}${contextual ? ' <em class="marca-ctx">relación contextual</em>' : ""}${
+      mult.length ? `<small class="mult-incl">Incluye: ${mult.map((k) => `<abbr title="${esc(nombreGET(catActual!, nivelMult as 0 | 1 | 2, k))}">${esc(k)}</abbr>`).join(", ")}</small>` : ""
+    }</span></label>${botonInfo(c)}</li>`;
 }
 
 /** Árbol por grupos nacionales (G01–G14) › clase nacional. */
@@ -72,16 +93,20 @@ export function htmlGrupos(cat: Catalogo, colorGrupo: (g: string) => string): st
     <details class="nodo n1">
       <summary><input type="checkbox" data-codigos="${cl.map((c) => c.codigo).join(",")}" checked aria-label="${esc(g.nombre)}">
         <span class="cod">${esc(g.codigo)}</span><i style="background:${colorGrupo(g.codigo)}"></i><span class="nom">${esc(g.nombre)}</span><small>${cl.length}</small></summary>
-      <div class="hijos"><ul>${cl.map(claseLi).join("")}</ul></div></details>`;
+      <div class="hijos"><ul>${cl.map((c) => claseLi(c)).join("")}</ul></div></details>`;
     })
     .join("");
 }
 
 export function htmlLeyenda(cat: Catalogo): string {
+  catActual = cat;
+  // En un nodo MULT, la lista de categorías que reúnen sus clases
+  const incl = (nivel: 0 | 1 | 2, cod: string, clases: Clase[]) =>
+    cod === "MULT" ? ` (${[...new Set(clases.flatMap((c) => categoriasGET(c, nivel)))].sort(ordenarGET).join(", ")})` : "";
   const nodo = (nivel: 0 | 1 | 2, cod: string, clases: Clase[], interior: string, abierto: boolean) => `
     <details class="nodo n${nivel + 1}${especial(cod) ? " especial" : ""}"${abierto ? " open" : ""}>
       <summary><input type="checkbox" data-codigos="${clases.map((c) => c.codigo).join(",")}" checked aria-label="${esc(nombreGET(cat, nivel, cod))}">
-        <span class="cod">${cod === "SIN_GET" ? "—" : esc(cod)}</span><span class="nom">${esc(nombreGET(cat, nivel, cod))}</span><small>${clases.length}</small></summary>
+        <span class="cod">${cod === "SIN_GET" ? "—" : esc(cod)}</span><span class="nom">${esc(nombreGET(cat, nivel, cod))}${cod === "MULT" ? `<span class="mult-incl">${esc(incl(nivel, cod, clases))}</span>` : ""}</span><small>${clases.length}</small></summary>
       <div class="hijos">${interior}</div></details>`;
 
   return [...arbolGET(cat.clases)]
@@ -93,7 +118,9 @@ export function htmlLeyenda(cat: Catalogo): string {
           const html3 = [...efgs]
             .map(([k3, cl]) => {
               const cl3 = [...cl].sort((a, b) => a.codigo - b.codigo);
-              return nodo(2, k3, cl3, `<ul>${cl3.map(claseLi).join("")}</ul>`, false);
+              // La clase muestra las categorías del nivel más alto en que es MULT
+              const nivelMult = (c: Clase): -1 | 0 | 1 | 2 => (k1 === "MULT" ? 0 : k2 === "MULT" ? 1 : c.get3 === "MULT" && k3 === "MULT" ? 2 : -1);
+              return nodo(2, k3, cl3, `<ul>${cl3.map((c) => claseLi(c, nivelMult(c))).join("")}</ul>`, false);
             })
             .join("");
           return nodo(1, k2, cl2, html3, false);

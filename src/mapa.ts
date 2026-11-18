@@ -5,6 +5,8 @@ import { url, type ClaveCapa } from "./datos";
 import { ZOOM_MAX_DATOS } from "./teselas";
 import { espejar } from "./comparar";
 import { ControlMapaBase, registrarMapaBase } from "./mapabase";
+import { agregarControl3D } from "./relieve3d";
+import { ControlPuntos } from "./puntos";
 
 const HONDURAS: LngLatBoundsLike = [[-89.5, 12.9], [-82.9, 17.5]];
 const vacio: GeoJSON.FeatureCollection = { type: "FeatureCollection", features: [] };
@@ -74,13 +76,19 @@ export function crearMapa(contenedor: string): Promise<MapaML> {
       ],
     },
   });
-  mapa.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
+  mapa.addControl(new maplibregl.NavigationControl({ showCompass: true, visualizePitch: true }), "top-right");
   mapa.addControl(new maplibregl.ScaleControl({ unit: "metric" }), "bottom-left");
   mapa.addControl(new ControlEscala(), "bottom-left");
   mapa.addControl(new maplibregl.FullscreenControl(), "top-right");
   mapa.addControl(new ControlMapaBase(), "top-left");
+  mapa.addControl(new ControlPuntos(), "top-left");
   registrarMapaBase(mapa);
-  return new Promise((ok) => mapa.on("load", () => ok(mapa)));
+  return new Promise((ok) =>
+    mapa.on("load", () => {
+      agregarControl3D(mapa);
+      ok(mapa);
+    }),
+  );
 }
 
 const cacheLimites = new Map<ClaveCapa, Promise<GeoJSON.FeatureCollection>>();

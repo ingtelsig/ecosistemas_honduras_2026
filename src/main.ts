@@ -1,4 +1,5 @@
 import maplibregl, { type Map as MapaML, type MapGeoJSONFeature } from "maplibre-gl";
+import { htmlPunto, puntoEn } from "./puntos";
 import "./estilos.css";
 import { CAPAS, cargarCatalogo, cargarManifiesto, cargarUnidades, ha, pct, type Catalogo, type ClaveCapa, type Manifiesto, type Unidad } from "./datos";
 import { capturar, crearMapa, encuadrar, limites, mostrarCapa, refrescarEcosistemas, seleccionar } from "./mapa";
@@ -37,6 +38,7 @@ async function iniciar() {
     sel: null,
     visibles: new Set(cat.clases.map((c) => c.codigo)),
   };
+  if (import.meta.env.DEV) (window as unknown as { __mapa: MapaML }).__mapa = mapa; // solo para pruebas locales
   refrescarEcosistemas(mapa, fijarColores(cat.clases, E.visibles));
   void iniciarComparacion(mapa);
   construirCapas();
@@ -205,7 +207,7 @@ function pintarResumen() {
     ${r.clases.length > 10 ? `<button id="btn-mas" class="btn enlace">Ver las ${r.clases.length} clases</button>` : ""}
     ${nacional ? `<p class="nota">Sin unidad seleccionada se muestra el total nacional cartografiado. Elija una unidad en la lista o en el mapa.</p>` : ""}`;
   $("btn-pdf").onclick = () => generarPDF(r);
-  $("btn-csv").onclick = () => descargar(new Blob([csv(r, nombreCapa(u))], { type: "text/csv;charset=utf-8" }), `ecosistemas_R26_${slug(u.nombre)}.csv`);
+  $("btn-csv").onclick = () => descargar(new Blob([csv(r, nombreCapa(u), E.cat)], { type: "text/csv;charset=utf-8" }), `ecosistemas_R26_${slug(u.nombre)}.csv`);
   const q = document.getElementById("btn-quitar");
   if (q) q.onclick = () => elegir(null);
   const sf = document.getElementById("btn-sin-filtro");
@@ -414,6 +416,12 @@ function enlazarEventos() {
     hover = undefined;
   });
   m.on("click", async (e) => {
+    const pt = puntoEn(m, e.point);
+    if (pt) {
+      popup?.remove();
+      popup = new maplibregl.Popup({ maxWidth: "360px", className: "pop-punto" }).setLngLat((pt.geometry as GeoJSON.Point).coordinates as [number, number]).setHTML(htmlPunto(pt)).addTo(m);
+      return;
+    }
     const [cod, f] = await Promise.all([
       codigoEn(e.lngLat.lng, e.lngLat.lat, m.getZoom()),
       Promise.resolve(m.queryRenderedFeatures(e.point, { layers: ["unidades-relleno"] })[0] as MapGeoJSONFeature | undefined),
