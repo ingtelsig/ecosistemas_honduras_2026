@@ -1,6 +1,6 @@
 // Reporte PDF por unidad, generado en el navegador con jsPDF y jspdf-autotable.
 import { jsPDF } from "jspdf";
-import autoTable from "jspdf-autotable";
+import autoTable, { type RowInput } from "jspdf-autotable";
 import { ha, pct, type Catalogo, type Manifiesto } from "./datos";
 import type { Fila, FilaClase, Resumen } from "./resumen";
 import { arbolGET, nombreGET, rutaGET } from "./leyenda";
@@ -160,19 +160,24 @@ export function crearPDF(d: DatosReporte): jsPDF {
     }
     y = titulo(tituloTabla, y);
     y = cuerpo(nota, y, 7.8, GRIS);
+    // didDrawCell recibe la fila de la tabla; se ubica la fila de datos por el arreglo original (row.raw) y no por
+    // row.index, que deja de coincidir cuando una fila se parte entre páginas.
+    const deFila = new WeakMap<object, FilaJ>();
     autoTable(doc, {
       startY: y,
       margin: { left: M, right: M, top: 20, bottom: 18 },
       head: [["", "Código", "Clase de ecosistema", columnaExtra, "Hectáreas", "%"]],
-      body: filas.map((f) =>
-        esClase(f)
+      body: filas.map((f) => {
+        const fila: RowInput = esClase(f)
           ? ["", f.codigo, f.nombre, extra(f), ha(f.ha, 2), pct(f.pct)]
           : [
               { content: f.texto, colSpan: 4, styles: { fontStyle: f.nivel === 2 ? "italic" : "bold", fillColor: FONDO[f.nivel], cellPadding: { top: 1.4, bottom: 1.4, left: 1.5 + 3 * f.nivel, right: 1 } } },
               { content: ha(f.ha, 2), styles: { fontStyle: "bold", fillColor: FONDO[f.nivel] } },
               { content: pct(f.pct), styles: { fontStyle: "bold", fillColor: FONDO[f.nivel] } },
-            ],
-      ),
+            ];
+        deFila.set(fila, f);
+        return fila;
+      }),
       styles: { fontSize: 7.3, cellPadding: 1.1, textColor: TINTA, valign: "middle" },
       headStyles: { fillColor: VERDE, textColor: 255 },
       columnStyles: {
@@ -184,7 +189,8 @@ export function crearPDF(d: DatosReporte): jsPDF {
       },
       theme: "plain",
       didDrawCell: (c) => {
-        const f = filas[c.row.index];
+        const f = c.row.raw && typeof c.row.raw === "object" ? deFila.get(c.row.raw as object) : undefined;
+        if (!f) return;
         if (c.section === "body" && c.column.index === 0 && esClase(f)) {
           doc.setFillColor(...rgb(f.color)).rect(c.cell.x + 1, c.cell.y + c.cell.height / 2 - 1.6, 3, 3.2, "F");
         }
