@@ -179,7 +179,7 @@ CAPAS = [
      "fuente": "Integración GFCC, Copernicus y Dynamic World (HND_23)", "tipo": "continua", "zmax": 11,
      "min": 0, "max": 100, "f": "lineal", "src": [(BASE / "HND_23_cobertura_arborea_integrada_pct.tif", 1)],
      "rampa": "verde"},
-    {"id": "regimen_629", "uso": 'No cambia la leyenda: la clase 629 (bosque latifoliado abierto y/o perturbado) conserva su código. Esta capa reparte la 629 por régimen con las evidencias del ajuste del bosque seco (ICF 2024, altitud, caída de verdor Sentinel-2 y lluvia del trimestre seco) y el bosque latifoliado vecino como desempate: 1.033.713 ha secas, 315.578 estacionales y 230.792 pluviales.', "nombre": "Régimen de la clase 629", "grupo": "Complementos del R26", "tipo": "clases", "zmax": 12,
+    {"id": "regimen_629", "uso": 'No cambia la leyenda: la clase 629 (bosque latifoliado abierto y/o perturbado) conserva su código. Esta capa reparte la 629 por régimen con los mismos criterios del arbustal y del ajuste del bosque seco: toma el régimen del bosque latifoliado vecino, pasa a seco solo con señal seca firme (caída de verdor Sentinel-2 y lluvia del trimestre seco) y deja de ser seca sobre siempreverde ICF o con evidencias en contra. Resultado: 948.328 ha secas, 362.651 estacionales y 269.104 pluviales.', "nombre": "Régimen de la clase 629", "grupo": "Complementos del R26", "tipo": "clases", "zmax": 12,
      "fuente": "Capa complementaria del R26 (Geodatos/Complementarias/Regimen_629_R26_30m.tif; scripts 63 y 65)",
      "src": [(APP.parent / "Entrega_final_R26" / "Geodatos" / "Complementarias" / "Regimen_629_R26_30m.tif", 1)], "calc": cero_es_vacio,
      "clases": [{"v": 1, "n": "629 pluvial / siempreverde", "c": "#2c7fb8"}, {"v": 2, "n": "629 estacional / semideciduo", "c": "#fc8d59"},
