@@ -1,9 +1,9 @@
 {
   "edicion": "2026",
-  "generado": "2026-11-18",
+  "generado": "2026-11-19",
   "raster": {
     "archivo": "Mapa_Ecosistemas_R26_30m.tif",
-    "sha256": "34a36bbe3302bc239542a0a82ec387cefc92e3928cd3892a654a7c213250b685",
+    "sha256": "3d8186568673b84447cb41efbc223db0f73d9f996a5f475d19ee95e3a74caceb",
     "celda_ha": 0.09
   },
   "fuentes": {
@@ -72,8 +72,8 @@
       "unidades": 298,
       "ha_total": 11141835.75,
       "ha_total_cruces_R26": 11141835.75,
-      "pares_clase_unidad": 14256,
-      "pares_cruces_R26": 14256,
+      "pares_clase_unidad": 14248,
+      "pares_cruces_R26": 14248,
       "dif_max_ha": 0.0,
       "pares_con_dif_mayor_0_1_ha": 0
     },
@@ -81,8 +81,8 @@
       "unidades": 1928,
       "ha_total": 554199.39,
       "ha_total_cruces_R26": 554199.39,
-      "pares_clase_unidad": 16177,
-      "pares_cruces_R26": 16177,
+      "pares_clase_unidad": 16173,
+      "pares_cruces_R26": 16173,
       "dif_max_ha": 0.0,
       "pares_con_dif_mayor_0_1_ha": 0
     }
