@@ -131,17 +131,29 @@ export function refrescarEcosistemas(mapa: MapaML, version: number) {
   (mapa.getSource("eco") as maplibregl.RasterTileSource).setTiles([`eco://{z}/{x}/{y}?v=${version}`]);
 }
 
-/** Captura el mapa encuadrado en la unidad (para el PDF) y devuelve la vista anterior. */
-export async function capturar(mapa: MapaML, bbox: [number, number, number, number] | null, ancho = 1600, alto = 1200): Promise<string> {
+/** Captura el mapa encuadrado en la unidad (para el PDF) y devuelve la vista anterior.
+ *  Se dibuja a 3200 × 2400 píxeles con relación de píxel 1, igual en cualquier pantalla: el encuadre pide un nivel de
+ *  teselas más que a 1600 px (más detalle del ráster de 30 m) y en la hoja da unos 450 ppp. Los límites dibujados con
+ *  ancho fijo se engruesan al doble mientras dura la captura para que se vean igual que antes. */
+export async function capturar(mapa: MapaML, bbox: [number, number, number, number] | null, ancho = 3200, alto = 2400): Promise<string> {
   const previa = { center: mapa.getCenter(), zoom: mapa.getZoom() };
   const cont = mapa.getContainer();
   const estiloPrevio = cont.getAttribute("style") ?? "";
-  // tamaño fijo en píxeles CSS para que el encuadre sea igual en cualquier pantalla
-  const ratio = window.devicePixelRatio || 1;
-  Object.assign(cont.style, { position: "fixed", left: "-10000px", top: "0", width: `${ancho / ratio}px`, height: `${alto / ratio}px` });
+  const ratioPrevio = mapa.getPixelRatio();
+  const ESCALA = ancho / 1600;
+  const anchos: [string, number][] = [];
+  for (const id of ["deptos-linea", "seleccion-halo", "seleccion-linea"]) {
+    const w = mapa.getLayer(id) ? mapa.getPaintProperty(id, "line-width") : undefined;
+    if (typeof w === "number") {
+      anchos.push([id, w]);
+      mapa.setPaintProperty(id, "line-width", w * ESCALA);
+    }
+  }
+  mapa.setPixelRatio(1);
+  Object.assign(cont.style, { position: "fixed", left: "-10000px", top: "0", width: `${ancho}px`, height: `${alto}px` });
   mapa.resize();
-  if (bbox) mapa.fitBounds([[bbox[0], bbox[1]], [bbox[2], bbox[3]]], { padding: 30, animate: false, maxZoom: ZOOM_MAX_MAPA });
-  else mapa.fitBounds(HONDURAS, { padding: 10, animate: false });
+  if (bbox) mapa.fitBounds([[bbox[0], bbox[1]], [bbox[2], bbox[3]]], { padding: 30 * ESCALA, animate: false, maxZoom: ZOOM_MAX_MAPA });
+  else mapa.fitBounds(HONDURAS, { padding: 10 * ESCALA, animate: false });
   await new Promise<void>((ok) => mapa.once("idle", () => ok()));
   const lienzo = mapa.getCanvas();
   const salida = document.createElement("canvas");
@@ -151,7 +163,9 @@ export async function capturar(mapa: MapaML, bbox: [number, number, number, numb
   ctx.fillStyle = "#ffffff";
   ctx.fillRect(0, 0, salida.width, salida.height);
   ctx.drawImage(lienzo, 0, 0);
-  const datos = salida.toDataURL("image/jpeg", 0.9);
+  const datos = salida.toDataURL("image/jpeg", 0.92);
+  for (const [id, w] of anchos) mapa.setPaintProperty(id, "line-width", w);
+  mapa.setPixelRatio(ratioPrevio);
   cont.setAttribute("style", estiloPrevio);
   mapa.resize();
   mapa.jumpTo(previa);
