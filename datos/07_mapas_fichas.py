@@ -48,6 +48,7 @@ with rasterio.open(TIF) as src:
     assert src.crs.to_epsg() == 32616 and src.nodata == 0 and src.res == (30, 30)
     x0, y0 = src.transform.c, src.transform.f
     width = math.ceil(src.width / step)
+    NFILAS = math.ceil(src.height / step)
     col = np.arange(src.width, dtype=np.uint32) // step
     for y in range(0, src.height, 300):
         block = src.read(1, window=Window(0, y, src.width, min(300, src.height - y)))
@@ -142,11 +143,24 @@ def render(k):
             halo = np.asarray(Image.fromarray(fill.astype(np.uint8) * 255).filter(ImageFilter.MaxFilter(5))) > 0
             arr[halo & ~fill] = ImageColor.getrgb(LITORAL[k])
         arr[fill] = ImageColor.getrgb(style[k]["color"])
-    else:
-        presence = (presence > 0).astype(np.uint8) * 255
-        if int((presence > 0).sum()) < 110:
-            presence = np.asarray(Image.fromarray(presence).filter(ImageFilter.MaxFilter(3)))
+    elif int((presence > 0).sum()) < 110:
+        # clases muy pequeñas: píxel lleno y engrosado para que se vean
+        presence = np.asarray(Image.fromarray((presence > 0).astype(np.uint8) * 255).filter(ImageFilter.MaxFilter(3)))
         arr[presence > 0] = ImageColor.getrgb(style[k]["color"])
+    else:
+        # intensidad según la fracción del píxel que ocupa la clase (lleno desde el 40 %, mínimo 35 % para que no
+        # desaparezcan los parches sueltos): así las clases dispersas no se leen como manchas continuas
+        ocup = np.zeros((H, PW), np.float32)
+        np.add.at(ocup, (v, u), counts.astype(np.float32))
+        # celdas posibles por píxel: bloques de 300 m cuyo centro cae en él (evita el muaré de dividir por un área fija)
+        nb = np.zeros((H, PW), np.float32)
+        ub = np.floor((x0 + (np.arange(width) + .5) * 300 - l) / scale).astype(np.int32)
+        vb = np.floor((t - y0 + (np.arange(NFILAS) + .5) * 300) / scale).astype(np.int32)
+        okb_u, okb_v = (ub >= 0) & (ub < PW), (vb >= 0) & (vb < H)
+        np.add.at(nb, np.ix_(vb[okb_v], ub[okb_u]), 100)
+        frac = ocup / np.maximum(nb, 1)
+        a = (np.clip(0.35 + 0.65 * frac / 0.4, 0.35, 1) * (ocup > 0))[..., None]
+        arr[:] = (arr * (1 - a) + np.array(ImageColor.getrgb(style[k]["color"])) * a).astype(np.uint8)
     canvas.paste(Image.fromarray(arr), (M, 22))
     draw.rectangle((M, 22, M + PW, 22 + H), outline="#8fa8aa", width=1)
     draw.text((M + PW - 45, 42), "N", font=font(24, True), fill=INK)
