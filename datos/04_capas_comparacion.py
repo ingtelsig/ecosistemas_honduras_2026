@@ -124,6 +124,20 @@ def cero_es_vacio(a):
     return v
 
 
+def regimen_vegetacion(a):
+    """Régimen climático (1 pluvial / siempreverde, 2 estacional / semideciduo, 3 seco / deciduo) con que el mapa clasifica
+    bosques y arbustales: dígito R del código en latifoliados (1RPD), coníferas (2RP0), mixtos (3RP0) y arbustales (40RD);
+    en la 629, que no lleva régimen en su código, la capa complementaria del R26 (mismos criterios del arbustal y del bosque seco)."""
+    c, r629 = np.nan_to_num(a[0], nan=0).astype(np.int32), np.nan_to_num(a[1], nan=0)
+    v = np.full(c.shape, np.nan, np.float32)
+    lat = (c >= 1112) & (c <= 1334); v[lat] = (c[lat] // 100) % 10
+    acm = ((c >= 2110) & (c <= 2230)) | ((c >= 3110) & (c <= 3230)); v[acm] = (c[acm] // 100) % 10
+    arb = (c >= 4012) & (c <= 4034); v[arb] = (c[arb] // 10) % 10
+    m629 = (c == 629) & (r629 > 0); v[m629] = r629[m629]
+    v[~np.isin(v, [1, 2, 3])] = np.nan
+    return v
+
+
 CAPAS = [
     {"id": "cobertura_2024", "uso": 'Es la base de cobertura del mapa. Separa bosque latifoliado, conífera, mixto, mangle, cultivos, pastizales, humedales y áreas transformadas, y decide a qué familia de clases (grupo nacional) pertenece cada celda antes de aplicar régimen, piso y drenaje.', "nombre": "Cobertura forestal y uso del suelo 2024", "grupo": "Cobertura",
      "fuente": "ICF, Mapa Forestal y de Cobertura de la Tierra 2024 (HND_02)", "tipo": "clases", "zmax": 12,
@@ -179,11 +193,12 @@ CAPAS = [
      "fuente": "Integración GFCC, Copernicus y Dynamic World (HND_23)", "tipo": "continua", "zmax": 11,
      "min": 0, "max": 100, "f": "lineal", "src": [(BASE / "HND_23_cobertura_arborea_integrada_pct.tif", 1)],
      "rampa": "verde"},
-    {"id": "regimen_629", "uso": 'No cambia la leyenda: la clase 629 (bosque latifoliado abierto y/o perturbado) conserva su código. Esta capa reparte la 629 por régimen con los mismos criterios del arbustal y del ajuste del bosque seco: toma el régimen del bosque latifoliado vecino, pasa a seco solo con señal seca firme (caída de verdor Sentinel-2 y lluvia del trimestre seco) y deja de ser seca sobre siempreverde ICF o con evidencias en contra. Resultado: 948.328 ha secas, 362.651 estacionales y 269.104 pluviales.', "nombre": "Régimen de la clase 629", "grupo": "Complementos del R26", "tipo": "clases", "zmax": 12,
-     "fuente": "Capa complementaria del R26 (Geodatos/Complementarias/Regimen_629_R26_30m.tif; scripts 63 y 65)",
-     "src": [(APP.parent / "Entrega_final_R26" / "Geodatos" / "Complementarias" / "Regimen_629_R26_30m.tif", 1)], "calc": cero_es_vacio,
-     "clases": [{"v": 1, "n": "629 pluvial / siempreverde", "c": "#2c7fb8"}, {"v": 2, "n": "629 estacional / semideciduo", "c": "#fc8d59"},
-                {"v": 3, "n": "629 seco / deciduo", "c": "#d7301f"}]},
+    {"id": "regimen_climatico", "uso": 'Es el factor R del código de clase: el régimen climático con que el mapa clasifica los bosques (latifoliados, coníferas y mixtos) y los arbustales. Resume la lluvia, la duración de la estación seca y la caída del verdor del dosel. En el bosque latifoliado abierto o perturbado (629), cuyo código no lleva régimen, se asigna con los mismos criterios que en arbustales y bosque seco: el régimen del bosque vecino, seco solo con señal seca firme y nunca sobre bosque siempreverde del ICF.', "nombre": "Régimen climático de bosques y arbustales", "grupo": "Clima", "tipo": "clases", "zmax": 12,
+     "fuente": "Factor R de los códigos de bosques y arbustales del mapa 2026; en la clase 629, capa complementaria Geodatos/Complementarias/Regimen_629_R26_30m.tif (scripts 63 y 65)",
+     "src": [(R26, 1), (APP.parent / "Entrega_final_R26" / "Geodatos" / "Complementarias" / "Regimen_629_R26_30m.tif", 1)], "calc": regimen_vegetacion,
+     "clases": [{"v": 1, "n": "Pluvial / siempreverde: húmedo todo el año", "c": "#2c7fb8"},
+                {"v": 2, "n": "Estacional / semideciduo: estación seca moderada", "c": "#fdae61"},
+                {"v": 3, "n": "Seco / deciduo: pierde el follaje en la estación seca", "c": "#d7301f"}]},
     {"id": "mapa_2002", "uso": 'No interviene en la clasificación. Es el antecedente nacional (Mejía Ordóñez y House 2002) que sirvió de base al sistema de clases y permite comparar visualmente los cambios.', "nombre": "Mapa de Ecosistemas 2002", "grupo": "Mapa anterior", "tipo": "clases", "zmax": 12,
      "fuente": "Mejía Ordóñez y House (2002), Mapa de Ecosistemas Vegetales de Honduras",
      "vector": V2002,
@@ -449,8 +464,8 @@ def procesar(capa: dict, w: float, s: float, e: float, n: float) -> dict:
 
 
 # Orden en el visor: criterios de relieve, drenaje, clima, fenología y estructura; al final la cobertura 2024 y el mapa 2002
-ORDEN = ["elevacion", "piso", "vertiente", "hand", "drenaje", "agua_estacional", "lluvia", "meses_secos", "evi2",
-         "altura_dosel", "cobertura_arborea", "cobertura_2024", "mapa_2002", "regimen_629"]
+ORDEN = ["elevacion", "piso", "vertiente", "hand", "drenaje", "agua_estacional", "lluvia", "meses_secos", "regimen_climatico", "evi2",
+         "altura_dosel", "cobertura_arborea", "cobertura_2024", "mapa_2002"]
 CAPAS.sort(key=lambda c: ORDEN.index(c["id"]))
 
 
