@@ -1,6 +1,6 @@
 // Catálogo de fichas monográficas por unidad ecosistémica (generadas por datos/03_fichas.py desde los catálogos 2026).
 import { ha, pct, url, type Catalogo, type Clase, type Unidad } from "./datos";
-import { claseDe } from "./resumen";
+import { claseDe, descargar, slug } from "./resumen";
 import { altHTML, nombreGET, rutaGET } from "./leyenda";
 
 interface Bloque {
@@ -96,6 +96,7 @@ export function iniciarFichas(c: ContextoFicha) {
       ctx.soloEnMapa(actual);
       dlg.close();
     }
+    if (t.closest("[data-pdf]")) void descargarFichaPDF(actual);
   });
   dlg.addEventListener("keydown", (e) => {
     if (e.key === "ArrowRight" && !(e.target as HTMLElement).closest("input")) abrirFicha(orden[(orden.indexOf(actual) + 1) % orden.length]);
@@ -160,6 +161,54 @@ export async function abrirFicha(cod: number) {
     cuerpo.scrollTop = 0;
   } catch {
     cuerpo.querySelector(".f-cargando")!.textContent = "No se pudo cargar la ficha.";
+  }
+}
+
+/** Imagen del mapa de la ficha como JPEG con fondo blanco (jsPDF no lee WebP). */
+async function mapaJPEG(ruta: string): Promise<string | null> {
+  try {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.src = url(ruta);
+    await img.decode();
+    const cv = document.createElement("canvas");
+    cv.width = img.naturalWidth;
+    cv.height = img.naturalHeight;
+    const g = cv.getContext("2d")!;
+    g.fillStyle = "#ffffff";
+    g.fillRect(0, 0, cv.width, cv.height);
+    g.drawImage(img, 0, 0);
+    return cv.toDataURL("image/jpeg", 0.9);
+  } catch {
+    return null;
+  }
+}
+
+/** Enlace permanente a la ficha en el geovisor. */
+export const enlaceFicha = (cod: number) => new URL(`?ficha=${cod}`, document.baseURI).href;
+
+/** Genera y descarga la ficha de la clase en PDF. */
+export async function descargarFichaPDF(cod: number) {
+  const c = claseDe(ctx.cat, cod);
+  if (!c) return;
+  const boton = document.querySelector<HTMLButtonElement>("#ficha [data-pdf]");
+  if (boton) {
+    boton.disabled = true;
+    boton.textContent = "Generando…";
+  }
+  try {
+    const f = await cargar(cod);
+    const [{ crearFichaPDF }, mapa] = await Promise.all([import("./fichaPDF"), f.mapa ? mapaJPEG(f.mapa) : Promise.resolve(null)]);
+    const doc = crearFichaPDF(f, c, ctx.cat, mapa, enlaceFicha(cod));
+    descargar(doc.output("blob"), `Ficha_ecosistema_${cod}_${slug(c.nombre)}.pdf`);
+  } catch (e) {
+    console.error(e);
+    alert("No se pudo generar la ficha en PDF. Intente de nuevo.");
+  } finally {
+    if (boton) {
+      boton.disabled = false;
+      boton.textContent = "Descargar ficha (PDF)";
+    }
   }
 }
 

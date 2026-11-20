@@ -7,7 +7,7 @@ import { claseDe, colorDeGrupo, csv, descargar, resumir, slug, unidadNacional, t
 import { codigoEn, fijarColores, registrarProtocolo } from "./teselas";
 import { capaActiva, criteriosEn, iniciarComparacion, registrarProtocoloComparacion, valorEn } from "./comparar";
 import { htmlGrupos, htmlLeyenda, nombreGET } from "./leyenda";
-import { actualizarUnidadFicha, botonInfo, htmlCatalogo, iniciarFichas } from "./fichas";
+import { abrirFicha, actualizarUnidadFicha, botonInfo, descargarFichaPDF, htmlCatalogo, iniciarFichas } from "./fichas";
 
 const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
 const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
@@ -67,6 +67,24 @@ async function iniciar() {
   const u = id ? E.unidades.find((x) => x.id === id) : null;
   if (u) await elegir(u);
   else pintarResumen();
+  // enlaces directos: ?ficha=1112 abre la ficha; &descargar=pdf descarga la ficha o el reporte de la unidad
+  const pdf = q.get("descargar") === "pdf";
+  const ficha = Number(q.get("ficha"));
+  if (pdf) {
+    const limpio = new URLSearchParams(location.search);
+    limpio.delete("descargar"); // al recargar no se vuelve a descargar
+    history.replaceState(null, "", limpio.toString() ? `?${limpio}` : location.pathname);
+  }
+  if (ficha && claseDe(E.cat, ficha)) {
+    await abrirFicha(ficha);
+    if (pdf) {
+      aviso("Descargando la ficha en PDF…");
+      await descargarFichaPDF(ficha);
+    }
+  } else if (u && pdf) {
+    aviso("Generando el reporte PDF de la unidad…");
+    $<HTMLButtonElement>("btn-pdf").click();
+  }
 }
 
 // ---------------------------------------------------------------- capas y lista
