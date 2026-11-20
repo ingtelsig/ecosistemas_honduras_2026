@@ -69,8 +69,8 @@ async function iniciar() {
   const u = id ? E.unidades.find((x) => x.id === id) : null;
   if (u) await elegir(u);
   else pintarResumen();
-  // enlaces directos: ?ficha=1112 abre la ficha web; con &descargar=pdf la ficha también se muestra primero y es el
-  // usuario quien la descarga con «Descargar ficha (PDF)». En una unidad de reporte, &descargar=pdf genera su reporte.
+  // enlaces directos: ?ficha=1112 abre la ficha web y ?id=… selecciona la unidad de reporte. Con &descargar=pdf no se
+  // descarga nada automáticamente: se muestra primero la ficha o la unidad y el usuario descarga el PDF con su botón.
   const pdf = q.get("descargar") === "pdf";
   const ficha = Number(q.get("ficha"));
   if (pdf) {
@@ -85,8 +85,8 @@ async function iniciar() {
       aviso("Para guardar la ficha, use «Descargar ficha (PDF)».");
     }
   } else if (u && pdf) {
-    aviso("Generando el reporte PDF de la unidad…");
-    $<HTMLButtonElement>("btn-pdf").click();
+    $<HTMLButtonElement>("btn-pdf").focus();
+    aviso("Para guardar el reporte, use «Reporte PDF».");
   }
 }
 
