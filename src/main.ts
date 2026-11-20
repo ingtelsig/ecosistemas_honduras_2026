@@ -7,7 +7,7 @@ import { claseDe, colorDeGrupo, csv, descargar, resumir, slug, unidadNacional, t
 import { codigoEn, fijarColores, registrarProtocolo } from "./teselas";
 import { capaActiva, criteriosEn, iniciarComparacion, registrarProtocoloComparacion, valorEn } from "./comparar";
 import { htmlGrupos, htmlLeyenda, nombreGET } from "./leyenda";
-import { abrirFicha, actualizarUnidadFicha, botonInfo, descargarFichaPDF, htmlCatalogo, iniciarFichas } from "./fichas";
+import { abrirFicha, actualizarUnidadFicha, botonInfo, htmlCatalogo, iniciarFichas } from "./fichas";
 
 const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
 const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
@@ -69,7 +69,8 @@ async function iniciar() {
   const u = id ? E.unidades.find((x) => x.id === id) : null;
   if (u) await elegir(u);
   else pintarResumen();
-  // enlaces directos: ?ficha=1112 abre la ficha; &descargar=pdf descarga la ficha o el reporte de la unidad
+  // enlaces directos: ?ficha=1112 abre la ficha web; con &descargar=pdf la ficha también se muestra primero y es el
+  // usuario quien la descarga con «Descargar ficha (PDF)». En una unidad de reporte, &descargar=pdf genera su reporte.
   const pdf = q.get("descargar") === "pdf";
   const ficha = Number(q.get("ficha"));
   if (pdf) {
@@ -80,8 +81,8 @@ async function iniciar() {
   if (ficha && claseDe(E.cat, ficha)) {
     await abrirFicha(ficha);
     if (pdf) {
-      aviso("Descargando la ficha en PDF…");
-      await descargarFichaPDF(ficha);
+      document.querySelector<HTMLButtonElement>("#ficha [data-pdf]")?.focus();
+      aviso("Para guardar la ficha, use «Descargar ficha (PDF)».");
     }
   } else if (u && pdf) {
     aviso("Generando el reporte PDF de la unidad…");
