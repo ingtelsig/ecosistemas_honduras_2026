@@ -8,6 +8,7 @@ import { codigoEn, fijarColores, registrarProtocolo } from "./teselas";
 import { capaActiva, criteriosEn, iniciarComparacion, registrarProtocoloComparacion, valorEn } from "./comparar";
 import { htmlGrupos, htmlLeyenda, nombreGET } from "./leyenda";
 import { abrirFicha, actualizarUnidadFicha, botonInfo, htmlCatalogo, iniciarFichas } from "./fichas";
+import { abrirFichaUnidad } from "./fichaUnidad";
 
 const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
 const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
@@ -69,8 +70,9 @@ async function iniciar() {
   const u = id ? E.unidades.find((x) => x.id === id) : null;
   if (u) await elegir(u);
   else pintarResumen();
-  // enlaces directos: ?ficha=1112 abre la ficha web y ?id=… selecciona la unidad de reporte. Con &descargar=pdf no se
-  // descarga nada automáticamente: se muestra primero la ficha o la unidad y el usuario descarga el PDF con su botón.
+  // enlaces directos: ?ficha=1112 abre la ficha web de la clase y ?capa=…&id=… selecciona la unidad de reporte. Con
+  // &descargar=pdf (enlaces del informe) no se descarga nada automáticamente: se abre la ficha web de la clase o de la
+  // unidad y el usuario descarga el PDF con su botón.
   const pdf = q.get("descargar") === "pdf";
   const ficha = Number(q.get("ficha"));
   if (pdf) {
@@ -85,8 +87,8 @@ async function iniciar() {
       aviso("Para guardar la ficha, use «Descargar ficha (PDF)».");
     }
   } else if (u && pdf) {
-    $<HTMLButtonElement>("btn-pdf").focus();
-    aviso("Para guardar el reporte, use «Reporte PDF».");
+    // enlaces del informe (…&descargar=pdf): se abre la ficha web de la unidad; el PDF se descarga desde su botón
+    verFichaUnidad(resumir(E.cat, u, E.visibles));
   }
 }
 
@@ -232,7 +234,8 @@ function pintarResumen() {
       ${nacional || E.capa === "areas_protegidas" ? `<div><dt>Grupos</dt><dd>${r.grupos.length}</dd></div>` : `<div><dt>En el SINAPH</dt><dd>${pct(r.pctSinaph)}</dd></div>`}
     </dl>
     <div class="acciones">
-      <button id="btn-pdf" class="btn primario"${r.clases.length ? "" : " disabled"}>Reporte PDF</button>
+      <button id="btn-ficha-u" class="btn primario"${r.clases.length ? "" : " disabled"}>Ver ficha</button>
+      <button id="btn-pdf" class="btn"${r.clases.length ? "" : " disabled"}>Reporte PDF</button>
       <button id="btn-csv" class="btn"${r.clases.length ? "" : " disabled"}>CSV</button>
       ${nacional ? "" : `<button id="btn-quitar" class="btn">Quitar selección</button>`}
     </div>
@@ -244,8 +247,9 @@ function pintarResumen() {
     <table class="tabla-clases"><thead><tr><th></th><th>Cód.</th><th>Clase</th><th class="n">ha</th><th class="n">%</th></tr></thead><tbody>${filas}</tbody></table>
     ${r.clases.length > 10 ? `<button id="btn-mas" class="btn enlace">Ver las ${r.clases.length} clases</button>` : ""}
     ${nacional ? `<p class="nota">Sin unidad seleccionada se muestra el total nacional cartografiado. Elija una unidad en la lista o en el mapa.</p>` : ""}`;
+  $("btn-ficha-u").onclick = () => verFichaUnidad(r);
   $("btn-pdf").onclick = () => generarPDF(r);
-  $("btn-csv").onclick = () => descargar(new Blob([csv(r, nombreCapa(u), E.cat)], { type: "text/csv;charset=utf-8" }), `ecosistemas_2026_${slug(u.nombre)}.csv`);
+  $("btn-csv").onclick = () => descargarCSV(r);
   const q = document.getElementById("btn-quitar");
   if (q) q.onclick = () => elegir(null);
   const sf = document.getElementById("btn-sin-filtro");
@@ -260,12 +264,39 @@ function pintarResumen() {
   };
 }
 
+const descargarCSV = (r: Resumen) =>
+  descargar(new Blob([csv(r, nombreCapa(r.unidad), E.cat)], { type: "text/csv;charset=utf-8" }), `ecosistemas_2026_${slug(r.unidad.nombre)}.csv`);
+
+/** Mapa de la unidad para la ficha web y el PDF: se captura una vez por unidad y filtro de clases. */
+let mapaUnidad: { clave: string; img: Promise<string> } | null = null;
+function mapaDe(r: Resumen): Promise<string> {
+  const clave = `${E.capa}|${r.unidad.id}|${[...E.visibles].sort().join(",")}`;
+  if (mapaUnidad?.clave !== clave) {
+    const img = capturar(E.mapa, E.sel ? E.sel.bbox : null);
+    img.catch(() => (mapaUnidad = null));
+    mapaUnidad = { clave, img };
+  }
+  return mapaUnidad.img;
+}
+
+/** Ficha web de la unidad: el mismo contenido del reporte, con el botón para descargarlo en PDF. */
+function verFichaUnidad(r: Resumen) {
+  abrirFichaUnidad(r, {
+    cat: E.cat,
+    capaNombre: nombreCapa(r.unidad),
+    contexto: contextoDe(r.unidad),
+    mapa: () => mapaDe(r),
+    pdf: () => generarPDF(r),
+    csv: () => descargarCSV(r),
+  });
+}
+
 async function generarPDF(r: Resumen) {
   const boton = $<HTMLButtonElement>("btn-pdf");
   boton.disabled = true;
   boton.textContent = "Generando…";
   try {
-    const [{ crearPDF }, mapa] = await Promise.all([import("./reporte"), capturar(E.mapa, E.sel ? E.sel.bbox : null)]);
+    const [{ crearPDF }, mapa] = await Promise.all([import("./reporte"), mapaDe(r)]);
     const doc = crearPDF({ resumen: r, capaNombre: nombreCapa(r.unidad), contexto: contextoDe(r.unidad), mapa, catalogo: E.cat, manifiesto: E.man });
     descargar(doc.output("blob"), `Reporte_ecosistemas_2026_${slug(r.unidad.nombre)}.pdf`);
   } catch (e) {

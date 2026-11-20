@@ -114,6 +114,15 @@
       </div>
       <div id="ficha-cuerpo" class="f-cuerpo"></div>
     </dialog>
+    <dialog id="ficha-unidad" class="ficha" aria-labelledby="ficha-unidad-titulo">
+      <div class="f-barra">
+        <button type="button" class="btn" data-cerrar title="Volver al mapa">Ver en el mapa</button>
+        <button type="button" class="btn" data-csv title="Descargar las cifras de la unidad en CSV">CSV</button>
+        <button type="button" class="btn primario" data-pdf-unidad title="Descargar el reporte de la unidad en PDF">Descargar reporte (PDF)</button>
+        <button type="button" class="btn-cerrar" data-cerrar aria-label="Cerrar la ficha">×</button>
+      </div>
+      <div id="ficha-unidad-cuerpo" class="f-cuerpo"></div>
+    </dialog>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

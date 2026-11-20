@@ -365,3 +365,26 @@ button:focus-visible, a:focus-visible, select:focus-visible, input:focus-visible
 /* códigos GET enlazados a global-ecosystems.org */
 a.efg { color: inherit; text-decoration: underline dotted; text-underline-offset: 2px; }
 a.efg:hover { color: var(--acento, #0b6e4f); text-decoration-style: solid; }
+
+/* ficha web de la unidad de reporte */
+.fu-cifras { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin: 14px 0 0; }
+.fu-cifras div { background: #f3f6f3; border-radius: 6px; padding: 8px 10px; }
+.fu-cifras dt { font-size: 0.7rem; text-transform: uppercase; letter-spacing: .04em; color: var(--gris); }
+.fu-cifras dd { margin: 3px 0 0; font-weight: 700; font-size: 1.05rem; }
+.fu-cifras div:last-child dd { font-size: 0.85rem; }
+.fu-aviso { margin: 10px 0 0; padding: 8px 10px; border-radius: 6px; background: #fdf6e3; color: #7a5a14; font-size: 0.82rem; }
+.fu-mapa { aspect-ratio: 4 / 3; max-height: 460px; margin: 0 auto; display: flex; align-items: center; justify-content: center; background: #f7f8f7; border: 1px solid var(--linea); border-radius: 6px; overflow: hidden; }
+.fu-mapa img { width: 100%; height: 100%; max-height: none; object-fit: contain; border: 0; border-radius: 0; }
+.fu-barras .barra { grid-template-columns: minmax(0, 15em) 1fr auto; }
+.f-tabla { overflow-x: auto; margin: 6px 0 10px; }
+.f-tabla table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+.f-tabla th { background: var(--verde); color: #fff; text-align: left; padding: 4px 6px; font-weight: 600; }
+.f-tabla td { padding: 3px 6px; border-bottom: 1px solid #e8ebed; vertical-align: middle; }
+.f-tabla .n { text-align: right; white-space: nowrap; }
+.fu-jer .fu-n0 td { background: #ddebde; font-weight: 700; }
+.fu-jer .fu-n1 td { background: #ecf3ec; font-weight: 700; }
+.fu-jer .fu-n1 td:first-child { padding-left: 14px; }
+.fu-jer .fu-n2 td { background: #f6f9f6; font-style: italic; }
+.fu-jer .fu-n2 td:first-child { padding-left: 24px; }
+.fu-color { display: inline-block; width: 12px; height: 12px; border-radius: 2px; border: 1px solid rgba(0,0,0,.15); vertical-align: middle; }
+@media (max-width: 800px) { .fu-cifras { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
