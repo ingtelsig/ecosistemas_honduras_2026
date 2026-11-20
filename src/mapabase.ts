@@ -130,6 +130,14 @@ export class ControlMapaBase {
     rango.addEventListener("input", () => {
       m.setPaintProperty("ecosistemas", "raster-opacity", +rango.value / 100);
       salida.textContent = `${rango.value} %`;
+      document.dispatchEvent(new CustomEvent("opacidad-eco", { detail: { valor: +rango.value / 100, origen: "mapabase" } }));
+    });
+    // el control del panel lateral y este muestran siempre el mismo valor
+    document.addEventListener("opacidad-eco", (ev) => {
+      const { valor, origen } = (ev as CustomEvent<{ valor: number; origen: string }>).detail;
+      if (origen === "mapabase") return;
+      rango.value = String(Math.round(valor * 100));
+      salida.textContent = `${rango.value} %`;
     });
     return d;
   }

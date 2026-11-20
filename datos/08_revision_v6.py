@@ -184,8 +184,8 @@ def texto_sec2(c):
     v = vertiente(c)
     if v:
         car, pac, otra = v
-        if car < 0.05 or pac < 0.05:
-            lado, otro_lado, v_ = (("del Pacífico", "del Caribe", pac) if car < 0.05 else ("del Caribe", "del Pacífico", car))
+        if car == 0 or pac == 0:
+            lado, otro_lado, v_ = (("del Pacífico", "del Caribe", pac) if car == 0 else ("del Caribe", "del Pacífico", car))
             t += f" El {pct(v_)} de sus celdas pertenece a la vertiente {lado} y ninguna a la {otro_lado}"
             t += f" (el {pct(otra)} restante está en la franja insular o costera)." if otra >= 0.5 else "."
         else:
@@ -337,7 +337,7 @@ def fila_2002(c):
     eq, nota = T2.EQUIV.get(c, ([], None))
     if not eq:
         return "Sin equivalente directo en el mapa de 2002. " + T2.NOTA_SIN.get(nota, "")
-    return "; ".join(f"{T2.DESC[k][1]} — {T2.DESC[k][0]}" for k in eq).replace("<i>", "").replace("</i>", "") + \
+    return "; ".join(f"{T2.DESC[k][1]} — {T2.DESC[k][0]}" if T2.DESC[k][1] != "—" else T2.DESC[k][0] for k in eq).replace("<i>", "").replace("</i>", "") + \
         ". Ver la sección «Equivalencia con el mapa de 2002»."
 
 
@@ -606,7 +606,7 @@ def historica(d):
     if not m:
         return False
     v = float(m.group(1).replace(".", "").replace(",", "."))
-    return abs(v - ind.loc[c, "area_ha"]) / ind.loc[c, "area_ha"] > 0.005
+    return abs(v - ind.loc[c, "area_ha"]) > 0.01  # v7: cualquier diferencia con el mapa final
 
 
 def revisar(d):
@@ -648,6 +648,14 @@ def revisar(d):
                     fila[0], fila[1] = "Equivalencia con el mapa de 2002", fila_2002(c)
     if i is None:
         return d
+    # v7: vertiente y entorno del cuadro de indicadores siempre desde el mapa final
+    for b in bs:
+        if b["t"] == "tabla" and b["f"] and b["f"][0][0] == "Indicador clave":
+            for fila in b["f"]:
+                if fila[0].startswith("Reparto hidrográfico") and fila_vertiente(c):
+                    fila[1] = fila_vertiente(c)
+                elif fila[0].startswith("Entorno ambiental") and fila_entorno(c):
+                    fila[1] = fila_entorno(c)
     if historica(d):
         # --- nota de la cabecera y cuadro de indicadores
         for b in bs:
@@ -745,7 +753,8 @@ def revisar(d):
                     "conceptualmente a las categorías siguientes, cuya descripción se resume a continuación.", "v6": True})
         for k in eq:
             tit, codigos, desc = T2.DESC[k]
-            blo.append({"t": "p", "h": f"<b>{tit} ({codigos}).</b> {desc} [{n2}]", "v6": True})
+            cod_ = f" ({codigos})" if codigos != "—" else ""  # v7: sin «(—)» cuando 2002 no tenía código
+            blo.append({"t": "p", "h": f"<b>{tit}{cod_}.</b> {desc} [{n2}]", "v6": True})
     if nota:
         blo.append({"t": "nota", "h": T2.NOTA_SIN[nota], "v6": True})
     fr = T2.frase_coincidencia(c)

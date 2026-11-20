@@ -22,7 +22,11 @@ interface Ficha {
 const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
 const cache = new Map<number, Promise<Ficha>>();
 const cargar = (cod: number) => {
-  if (!cache.has(cod)) cache.set(cod, fetch(url(`fichas/${cod}.json`)).then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status))))));
+  if (!cache.has(cod)) {
+    const p = fetch(url(`fichas/${cod}.json`)).then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))));
+    p.catch(() => cache.delete(cod));
+    cache.set(cod, p);
+  }
   return cache.get(cod)!;
 };
 
@@ -48,7 +52,9 @@ function bloquesHTML(bs: Bloque[]): string {
         html += `<h4 class="f-h3">${esc(b.x!)}</h4>`;
         break;
       case "p":
-        html += `<p class="${refs ? "f-ref" : ""}">${b.h}</p>`;
+        html += refs
+          ? `<p class="f-ref">${b.h!.replace(/https?:\/\/[^\s<]+[^\s<.,;)]/g, (u) => `<a href="${u}" target="_blank" rel="noopener">${u}</a>`)}</p>`
+          : `<p>${b.h}</p>`;
         break;
       case "nota":
         html += `<p class="f-nota">${b.h}</p>`;
@@ -61,7 +67,7 @@ function bloquesHTML(bs: Bloque[]): string {
       case "tabla": {
         const [cab, ...filas] = b.f!;
         html += `<div class="f-tabla"><table><thead><tr>${cab.map((c) => `<th>${esc(c)}</th>`).join("")}</tr></thead><tbody>${filas
-          .map((r) => `<tr>${r.map((c) => `<td>${esc(c)}</td>`).join("")}</tr>`)
+          .map((r) => `<tr>${r.map((c) => `<td>${esc(c).replace(/&lt;(\/?)i&gt;/g, "<$1i>")}</td>`).join("")}</tr>`)
           .join("")}</tbody></table></div>`;
         break;
       }
@@ -86,6 +92,12 @@ export function iniciarFichas(c: ContextoFicha) {
   // orden de navegación: por grupo nacional y código
   orden = [...c.cat.clases].sort((a, b) => a.grupo.localeCompare(b.grupo) || a.codigo - b.codigo).map((x) => x.codigo);
   const dlg = document.getElementById("ficha") as HTMLDialogElement;
+  dlg.addEventListener("close", () => {
+    const q = new URLSearchParams(location.search);
+    if (!q.has("ficha")) return;
+    q.delete("ficha");
+    history.replaceState(null, "", q.toString() ? `?${q}` : location.pathname);
+  });
   dlg.addEventListener("click", (e) => {
     const t = e.target as HTMLElement;
     if (t === dlg) dlg.close(); // clic en el fondo
@@ -157,7 +169,7 @@ export async function abrirFicha(cod: number) {
       cabecera(c) +
       (f.mapa ? `<figure class="f-mapa"><img src="${url(f.mapa)}" alt="Mapa de distribución de la unidad ${cod} en Honduras" loading="lazy"><figcaption>Distribución de la unidad ${cod} en el Mapa de Ecosistemas 2026.</figcaption></figure>` : "") +
       `<div class="f-texto">${bloquesHTML(f.bloques)}</div>
-       <p class="f-fuente">Fuente: Catálogo de unidades ecosistémicas del Mapa de Ecosistemas 2026 (${esc(f.catalogo.replace(/_R26$/, "").replace(/_/g, " "))}). Las fotografías de campo y los gráficos se consultan en el catálogo completo.</p>`;
+       <p class="f-fuente">Fuente: catálogo de unidades ecosistémicas del Mapa de Ecosistemas de Honduras 2026, grupo ${esc(c.grupo)} (${esc(ctx.cat.grupos.find((g) => g.codigo === c.grupo)?.nombre ?? "")}). Las fotografías de campo y los gráficos se consultan en el catálogo completo.</p>`;
     cuerpo.scrollTop = 0;
   } catch {
     cuerpo.querySelector(".f-cargando")!.textContent = "No se pudo cargar la ficha.";

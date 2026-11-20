@@ -22,7 +22,7 @@ export const ZOOM_MAX_MAPA = Math.log2((M_PX_Z0 * Math.cos((LAT_REF * Math.PI) /
 class ControlEscala implements maplibregl.IControl {
   private el = document.createElement("div");
   private mapa?: MapaML;
-  private fmt = new Intl.NumberFormat("es-ES", { maximumFractionDigits: 0, useGrouping: "always" } as unknown as Intl.NumberFormatOptions);
+  private fmt = new Intl.NumberFormat("en-US", { maximumFractionDigits: 0, useGrouping: "always" } as unknown as Intl.NumberFormatOptions);
   private act = () => {
     const m = this.mapa!;
     const n = escalaEn(m.getZoom(), m.getCenter().lat);
@@ -43,10 +43,39 @@ class ControlEscala implements maplibregl.IControl {
   }
 }
 
+/** Textos de los controles de MapLibre en español. */
+const LOCALE_ES: Record<string, string> = {
+  "AttributionControl.ToggleAttribution": "Mostrar u ocultar la atribución",
+  "AttributionControl.MapFeedback": "Comentarios sobre el mapa",
+  "FullscreenControl.Enter": "Pantalla completa",
+  "FullscreenControl.Exit": "Salir de pantalla completa",
+  "GeolocateControl.FindMyLocation": "Mostrar mi ubicación",
+  "GeolocateControl.LocationNotAvailable": "Ubicación no disponible",
+  "LogoControl.Title": "Logotipo de MapLibre",
+  "Map.Title": "Mapa",
+  "Marker.Title": "Marcador",
+  "NavigationControl.ResetBearing": "Orientar al norte",
+  "NavigationControl.ZoomIn": "Acercar",
+  "NavigationControl.ZoomOut": "Alejar",
+  "Popup.Close": "Cerrar",
+  "ScaleControl.Feet": "pies",
+  "ScaleControl.Meters": "m",
+  "ScaleControl.Kilometers": "km",
+  "ScaleControl.Miles": "mi",
+  "ScaleControl.NauticalMiles": "mn",
+  "TerrainControl.Enable": "Activar el relieve",
+  "TerrainControl.Disable": "Desactivar el relieve",
+  "CooperativeGesturesHandler.WindowsHelpText": "Use Ctrl + rueda para acercar el mapa",
+  "CooperativeGesturesHandler.MacHelpText": "Use ⌘ + rueda para acercar el mapa",
+  "CooperativeGesturesHandler.MobileHelpText": "Use dos dedos para mover el mapa",
+};
+
 export function crearMapa(contenedor: string): Promise<MapaML> {
   const mapa = new maplibregl.Map({
     container: contenedor,
+    locale: LOCALE_ES,
     maxZoom: ZOOM_MAX_MAPA,
+    maxTileCacheSize: 200, // limita la memoria en teléfonos
     bounds: HONDURAS,
     fitBoundsOptions: { padding: 20 },
     maxBounds: [[-95, 9], [-76, 21]],
@@ -93,7 +122,11 @@ export function crearMapa(contenedor: string): Promise<MapaML> {
 
 const cacheLimites = new Map<ClaveCapa, Promise<GeoJSON.FeatureCollection>>();
 export function limites(capa: ClaveCapa): Promise<GeoJSON.FeatureCollection> {
-  if (!cacheLimites.has(capa)) cacheLimites.set(capa, fetch(url(`limites/${capa}.geojson`)).then((r) => r.json()));
+  if (!cacheLimites.has(capa)) {
+    const p = fetch(url(`limites/${capa}.geojson`)).then((r) => (r.ok ? r.json() : Promise.reject(new Error(`limites ${capa}: ${r.status}`))));
+    p.catch(() => cacheLimites.delete(capa));
+    cacheLimites.set(capa, p);
+  }
   return cacheLimites.get(capa)!;
 }
 
@@ -135,8 +168,15 @@ export function refrescarEcosistemas(mapa: MapaML, version: number) {
  *  Se dibuja a 3200 × 2400 píxeles con relación de píxel 1, igual en cualquier pantalla: el encuadre pide un nivel de
  *  teselas más que a 1600 px (más detalle del ráster de 30 m) y en la hoja da unos 450 ppp. Los límites dibujados con
  *  ancho fijo se engruesan al doble mientras dura la captura para que se vean igual que antes. */
-export async function capturar(mapa: MapaML, bbox: [number, number, number, number] | null, ancho = 3200, alto = 2400): Promise<string> {
-  const previa = { center: mapa.getCenter(), zoom: mapa.getZoom() };
+let capturando: Promise<string> | null = null;
+export function capturar(mapa: MapaML, bbox: [number, number, number, number] | null, ancho = 3200, alto = 2400): Promise<string> {
+  // un segundo clic mientras se captura reutiliza la misma captura en lugar de desordenar el lienzo
+  capturando ??= capturarMapa(mapa, bbox, ancho, alto).finally(() => (capturando = null));
+  return capturando;
+}
+
+async function capturarMapa(mapa: MapaML, bbox: [number, number, number, number] | null, ancho: number, alto: number): Promise<string> {
+  const previa = { center: mapa.getCenter(), zoom: mapa.getZoom(), pitch: mapa.getPitch(), bearing: mapa.getBearing() };
   const cont = mapa.getContainer();
   const estiloPrevio = cont.getAttribute("style") ?? "";
   const ratioPrevio = mapa.getPixelRatio();
@@ -149,25 +189,35 @@ export async function capturar(mapa: MapaML, bbox: [number, number, number, numb
       mapa.setPaintProperty(id, "line-width", w * ESCALA);
     }
   }
-  mapa.setPixelRatio(1);
-  Object.assign(cont.style, { position: "fixed", left: "-10000px", top: "0", width: `${ancho}px`, height: `${alto}px` });
-  mapa.resize();
-  if (bbox) mapa.fitBounds([[bbox[0], bbox[1]], [bbox[2], bbox[3]]], { padding: 30 * ESCALA, animate: false, maxZoom: ZOOM_MAX_MAPA });
-  else mapa.fitBounds(HONDURAS, { padding: 10 * ESCALA, animate: false });
-  await new Promise<void>((ok) => mapa.once("idle", () => ok()));
-  const lienzo = mapa.getCanvas();
-  const salida = document.createElement("canvas");
-  salida.width = lienzo.width;
-  salida.height = lienzo.height;
-  const ctx = salida.getContext("2d")!;
-  ctx.fillStyle = "#ffffff";
-  ctx.fillRect(0, 0, salida.width, salida.height);
-  ctx.drawImage(lienzo, 0, 0);
-  const datos = salida.toDataURL("image/jpeg", 0.92);
-  for (const [id, w] of anchos) mapa.setPaintProperty(id, "line-width", w);
-  mapa.setPixelRatio(ratioPrevio);
-  cont.setAttribute("style", estiloPrevio);
-  mapa.resize();
-  mapa.jumpTo(previa);
-  return datos;
+  try {
+    mapa.jumpTo({ pitch: 0, bearing: 0 });
+    mapa.setPixelRatio(1);
+    Object.assign(cont.style, { position: "fixed", left: "-10000px", top: "0", width: `${ancho}px`, height: `${alto}px` });
+    mapa.resize();
+    if (bbox) mapa.fitBounds([[bbox[0], bbox[1]], [bbox[2], bbox[3]]], { padding: 30 * ESCALA, animate: false, maxZoom: ZOOM_MAX_MAPA });
+    else mapa.fitBounds(HONDURAS, { padding: 10 * ESCALA, animate: false });
+    // espera a que se dibujen todas las teselas, con un máximo de 20 s si alguna no llega
+    await new Promise<void>((ok) => {
+      const t = setTimeout(ok, 20000);
+      mapa.once("idle", () => {
+        clearTimeout(t);
+        ok();
+      });
+    });
+    const lienzo = mapa.getCanvas();
+    const salida = document.createElement("canvas");
+    salida.width = lienzo.width;
+    salida.height = lienzo.height;
+    const ctx = salida.getContext("2d")!;
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, salida.width, salida.height);
+    ctx.drawImage(lienzo, 0, 0);
+    return salida.toDataURL("image/jpeg", 0.92);
+  } finally {
+    for (const [id, w] of anchos) mapa.setPaintProperty(id, "line-width", w);
+    mapa.setPixelRatio(ratioPrevio);
+    cont.setAttribute("style", estiloPrevio);
+    mapa.resize();
+    mapa.jumpTo(previa);
+  }
 }

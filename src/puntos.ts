@@ -1,4 +1,4 @@
-// Capa de los 1.228 puntos de referencia del mapa 2026 (campo 2026 y fuentes secundarias), en seis grupos de fuentes.
+// Capa de los 1,228 puntos de referencia del mapa 2026 (campo 2026 y fuentes secundarias), en seis grupos de fuentes.
 // Un clic sobre un punto muestra su tabla de atributos; los puntos de campo enlazan a su ficha técnica (PDF).
 import type { ExpressionSpecification, Map as MapaML, MapGeoJSONFeature, PointLike } from "maplibre-gl";
 import { url } from "./datos";
@@ -23,12 +23,12 @@ export const GRUPOS: Grupo[] = [
     forma: "circulo",
     relleno: "#ffffff",
     borde: "#000000",
-    fuentes: ["Formulario Kobo-2 (Campo Ecosistemas)", "Formulario Kobo-1 (Puntos de control v2)", "Digitalización en Pantalla", "Verificación Espacial Inter-Ráster (2014–2018–2024)"],
+    fuentes: ["Formulario Kobo 2 (campo de ecosistemas)", "Formulario Kobo 1 (puntos de control, v2)", "Digitalización en pantalla", "Verificación espacial entre rásteres (2014, 2018 y 2024)"],
   },
-  { id: "ifn", nombre: "IFN (todos los ciclos)", forma: "cuadrado", relleno: "#3a3a3a", borde: "#ffffff", fuentes: ["INF Ciclo I Exclusivas (2005–2006)", "INF Ciclo II (2011–2015)", "INF Mangles Ciclo IV (2024)"] },
-  { id: "marinos", nombre: "Hábitats marinos", forma: "rombo", relleno: "#ffffff", borde: "#000000", fuentes: ["Hábitats Marinos Surveys"] },
-  { id: "pmp", nombre: "PMP Estudio 2012 (ICF/WWF)", forma: "estrella", relleno: "#000000", borde: "#ffffff", fuentes: ["PMP Estudio 2012 (ICF / WWF)"] },
-  { id: "monitoreo", nombre: "Sitios de monitoreo de ecosistemas 2000", forma: "anillo", relleno: "#000000", borde: "#ffffff", fuentes: ["Sitios de Monitoreo Ecosistemas 2000"] },
+  { id: "ifn", nombre: "INF (todos los ciclos)", forma: "cuadrado", relleno: "#3a3a3a", borde: "#ffffff", fuentes: ["INF ciclo I, parcelas exclusivas (2005–2006)", "INF ciclo II (2011–2015)", "INF manglares, ciclo IV (2024)"] },
+  { id: "marinos", nombre: "Hábitats marinos", forma: "rombo", relleno: "#ffffff", borde: "#000000", fuentes: ["Levantamientos de hábitats marinos"] },
+  { id: "pmp", nombre: "PMP Estudio 2012 (ICF/WWF)", forma: "estrella", relleno: "#000000", borde: "#ffffff", fuentes: ["Estudio PMP 2012 (ICF / WWF)"] },
+  { id: "monitoreo", nombre: "Sitios de monitoreo de ecosistemas 2000", forma: "anillo", relleno: "#000000", borde: "#ffffff", fuentes: ["Sitios de monitoreo de ecosistemas 2000"] },
 ];
 const GRUPO_DE = new Map(GRUPOS.flatMap((g) => g.fuentes.map((f) => [f, g.id] as [string, string])));
 const grupoDe = (fuente: unknown) => GRUPO_DE.get(String(fuente)) ?? "foto";
@@ -101,7 +101,11 @@ const mapas = new Set<MapaML>();
 
 const cargar = () =>
   (cargando ??= fetch(url("puntos/puntos.geojson"))
-    .then((r) => r.json())
+    .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`puntos: ${r.status}`))))
+    .catch((e) => {
+      cargando = null;
+      throw e;
+    })
     .then((g: GeoJSON.FeatureCollection) => {
       for (const f of g.features) f.properties!.grupo = grupoDe(f.properties!.fuente);
       return (datos = g);
@@ -159,7 +163,7 @@ const ETIQUETAS: [string, string][] = [
   ["departamento", "Departamento"],
   ["municipio", "Municipio"],
   ["elev", "Elevación (msnm)"],
-  ["piso", "Piso altitudinal"],
+  ["piso", "Estrato de muestreo"],
   ["ref_original", "Clase original de la referencia"],
   ["ref_homologada", "Clase homologada (referencia)"],
   ["mapa_clase", "Clase del mapa en el punto"],
@@ -183,7 +187,7 @@ const ETIQUETAS: [string, string][] = [
 ];
 
 const valor = (k: string, v: unknown) => {
-  const s = k === "elev" ? new Intl.NumberFormat("es-ES", { maximumFractionDigits: 0, useGrouping: "always" } as unknown as Intl.NumberFormatOptions).format(Number(v)) : String(v);
+  const s = k === "elev" ? new Intl.NumberFormat("en-US", { maximumFractionDigits: 0, useGrouping: "always" } as unknown as Intl.NumberFormatOptions).format(Number(v)) : String(v);
   // Listas «A | B | C» en líneas separadas
   return s.includes(" | ") ? s.split(" | ").map(esc).join("<br>") : esc(s);
 };
@@ -204,7 +208,7 @@ export function htmlPunto(f: MapGeoJSONFeature): string {
       <small>${esc(g.nombre)} · ${lat.toFixed(5)}, ${lon.toFixed(5)}</small></div></div>
     ${ficha}
     <div class="pt-tabla-c"><table class="pop-criterios pt-tabla"><tbody>${filas}</tbody></table></div>
-    <p class="pt-nota">Fuente: Puntos de referencia y superficies jerárquicas del Mapa de Ecosistemas 2026 (1.228 registros).${p.tipo === "campo" ? " Ficha: Anexo 1 del Producto 3, validación de campo 2026." : ""}</p>`;
+    <p class="pt-nota">Fuente: Puntos de referencia y superficies jerárquicas del Mapa de Ecosistemas 2026 (1,228 registros).${p.tipo === "campo" ? " Ficha: Anexo 1 del Producto 3, validación de campo 2026." : ""}</p>`;
 }
 
 /** Botón «Puntos de referencia» con el filtro por fuente. */

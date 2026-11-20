@@ -7,7 +7,7 @@ export interface Clase {
   get1: string;
   get2: string;
   get3: string;
-  /** Regla estricta R25 (L1–L3): MULT con varias membresías, SIN_GET con relación solo contextual. */
+  /** Regla estricta (L1–L3): MULT con varias membresías, SIN_GET con relación solo contextual. */
   estricto: [string, string, string];
   /** Otros EFG (L3) a los que también puede pertenecer la clase. */
   alt: string[];
@@ -97,10 +97,15 @@ export function cargarUnidades(capa: ClaveCapa): Promise<Unidad[]> {
   return cacheUnidades.get(capa)!;
 }
 
-// Formatos numéricos con la convención del informe técnico: punto de miles y coma decimal (1.234,56)
+// Formatos numéricos con la convención del informe técnico final: coma de miles y punto decimal (1,234.56)
 const fmt = (d: number) =>
-  new Intl.NumberFormat("es-ES", { minimumFractionDigits: d, maximumFractionDigits: d, useGrouping: "always" } as unknown as Intl.NumberFormatOptions);
+  new Intl.NumberFormat("en-US", { minimumFractionDigits: d, maximumFractionDigits: d, useGrouping: "always" } as unknown as Intl.NumberFormatOptions);
 const f0 = fmt(0), f1 = fmt(1), f2 = fmt(2);
 /** Hectáreas; las superficies menores de 10 ha llevan dos decimales para no mostrarse como 0. */
 export const ha = (v: number, dec = 0) => (dec === 2 || (v > 0 && v < 10) ? f2 : dec === 1 ? f1 : f0).format(v);
-export const pct = (v: number) => (v > 0 && v < 0.05 ? "<0,1 %" : (v >= 10 ? f0 : f1).format(v) + " %");
+/** Fecha ISO (AAAA-MM-DD) en prosa: «19 de noviembre de 2026». */
+export const fechaLarga = (iso: string) =>
+  /^\d{4}-\d{2}-\d{2}$/.test(iso)
+    ? new Date(`${iso}T12:00:00`).toLocaleDateString("es-HN", { day: "numeric", month: "long", year: "numeric" })
+    : iso;
+export const pct = (v: number) => (v > 0 && v < 0.05 ? "<0.1 %" : (v >= 10 ? f0 : f1).format(v) + " %");

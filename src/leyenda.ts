@@ -1,6 +1,6 @@
 // Leyendas jerárquicas: por grupo nacional y por GET-UICN (Reino › Bioma › Grupo funcional (EFG) › clase nacional).
-// Cada clase cuelga de su clase GET-UICN principal (la más probable; Clasificacion/GET_principal_R26.csv) y muestra
-// las otras a las que también puede pertenecer. La regla estricta R25 (MULT / SIN_GET) se conserva en `estricto`.
+// Cada clase cuelga de su grupo funcional GET-UICN principal (el más probable) y muestra las otras a las que
+// también puede pertenecer. La regla estricta (MULT / SIN_GET) se conserva en `estricto`.
 import type { Catalogo, Clase } from "./datos";
 import { botonInfo } from "./fichas";
 
@@ -19,7 +19,7 @@ let nombresEFG: Map<string, string> | null = null;
 let catActual: Catalogo | null = null;
 
 export function nombreGET(cat: Catalogo, nivel: 0 | 1 | 2, cod: string): string {
-  if (cod === "MULT") return `${NOMBRE_MULT[nivel]} · pendiente de reparto`;
+  if (cod === "MULT") return `Asignación múltiple (${NOMBRE_MULT[nivel].toLowerCase()})`;
   if (cod === "SIN_GET") return "Sin correspondencia de membresía";
   nombresEFG ??= new Map(cat.clases.flatMap((c) => c.efg.map((e) => [e[0], e[1]] as [string, string])));
   return cat.get[(["GET_L1", "GET_L2", "GET_L3"] as const)[nivel]][cod] ?? nombresEFG.get(cod) ?? cod;

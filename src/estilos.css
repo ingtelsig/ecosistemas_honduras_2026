@@ -38,13 +38,17 @@ button, input, select { font: inherit; color: inherit; }
 .cab-logos { display: flex; align-items: center; gap: 12px; flex: none; background: #fff; padding: 4px 12px; border: 1px solid #e2e8f0; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,.04); }
 .cab-logos img { display: block; object-fit: contain; }
 .logo-inst { height: 34px; }
-.logo-serna { height: 17px; }
+.logo-serna { height: 22px; }
 .logo-intelsig { height: 24px; }
 .cab-sep { width: 1px; height: 26px; background: #cbd5e1; }
 .btn-icono { background: #fff; border: 1px solid #bae6fd; color: #0369a1; border-radius: 6px; width: 38px; height: 34px; cursor: pointer; font-size: 1.1rem; flex: none; }
 @media (max-width: 1100px) { .logo-inst { height: 26px; } .cab-logos { gap: 8px; padding: 4px 8px; } }
-@media (max-width: 800px) { .logo-inst, .logo-serna, .cab-sep { display: none; } .cabecera h1 { font-size: 0.98rem; } }
-@media (max-width: 480px) { .cab-logos, .cabecera p { display: none; } .cabecera h1 { white-space: normal; font-size: 0.92rem; } }
+/* .cab-logos img fija display:block; las reglas que ocultan necesitan la misma especificidad */
+@media (max-width: 800px) { .cab-logos .logo-serna, .cab-logos .logo-intelsig, .cab-logos .cab-sep { display: none; } .cab-logos .logo-inst { height: 22px; } .cabecera h1 { font-size: 0.98rem; } }
+@media (max-width: 560px) { .cab-logos, .cabecera p { display: none; } .cabecera h1 { white-space: normal; font-size: 0.92rem; } }
+.creditos-logos { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; margin: 6px 0 10px; }
+.creditos-logos img { height: 30px; width: auto; max-width: 100%; }
+.creditos-logos .logo-ing { height: 22px; }
 
 .principal { display: grid; grid-template-columns: 400px 1fr auto; height: calc(100% - var(--cab)); position: relative; }
 .panel { background: var(--panel); border-right: 1px solid var(--linea); overflow-y: auto; display: flex; flex-direction: column; }
@@ -189,6 +193,8 @@ input[type="checkbox"] { accent-color: var(--verde); }
   .leyenda.plegada { width: auto; max-height: none; height: auto; }
   .leyenda.plegada .ley-plegar { flex-direction: row; height: auto; padding: 8px 10px; }
   .leyenda.plegada .ley-titulo { writing-mode: horizontal-tb; transform: none; }
+  /* la pestaña plegada de la leyenda ocupa la esquina: los controles del mapa bajan para no quedar tapados */
+  .maplibregl-ctrl-top-right { margin-top: 40px; }
   .maplibregl-ctrl-top-right { top: 42px; }
 }
 
@@ -352,3 +358,6 @@ summary .nom .mult-incl { display: inline; margin-left: 3px; }
 .cmp-info-txt p:last-child { margin: 0; }
 .pt-cab img { flex: none; margin-top: 2px; }
 .pt-lista .cmp-op img { flex: none; }
+
+/* foco visible */
+button:focus-visible, a:focus-visible, select:focus-visible, input:focus-visible, summary:focus-visible, .maplibregl-ctrl button:focus-visible { outline: 3px solid #ffbf47; outline-offset: 1px; }

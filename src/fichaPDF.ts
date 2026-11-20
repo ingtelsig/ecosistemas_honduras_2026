@@ -129,13 +129,13 @@ export function crearFichaPDF(f: FichaDatos, c: Clase, cat: Catalogo, mapa: stri
   }
   y += 2;
   texto(
-    `Fuente: Catálogo de unidades ecosistémicas del Mapa de Ecosistemas 2026 (${f.catalogo.replace(/_R26$/, "").replace(/_/g, " ")}). Las fotografías de campo y los gráficos se consultan en el catálogo completo. Ficha en línea: ${enlace}`,
+    `Fuente: catálogo de unidades ecosistémicas del Mapa de Ecosistemas de Honduras 2026, grupo ${c.grupo} (${grupo?.nombre ?? ""}). Las fotografías de campo y los gráficos se consultan en el catálogo completo. Ficha en línea: ${enlace}`,
     { tam: 8, color: GRIS },
   );
 
   // ---------- pie ----------
   const total = doc.getNumberOfPages();
-  const hoy = new Date().toLocaleDateString("es-HN", { day: "2-digit", month: "long", year: "numeric" });
+  const hoy = new Date().toLocaleDateString("es-HN", { day: "numeric", month: "long", year: "numeric" });
   for (let p = 1; p <= total; p++) {
     doc.setPage(p);
     doc.setDrawColor(210, 214, 217).setLineWidth(0.2).line(M, 284, 210 - M, 284);

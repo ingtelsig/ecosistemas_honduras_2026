@@ -132,7 +132,7 @@ export function registrarProtocoloComparacion() {
 }
 
 const numero = (v: number, dec = 0) =>
-  v.toLocaleString("es-ES", { minimumFractionDigits: dec, maximumFractionDigits: dec, useGrouping: "always" } as unknown as Intl.NumberFormatOptions);
+  v.toLocaleString("en-US", { minimumFractionDigits: dec, maximumFractionDigits: dec, useGrouping: "always" } as unknown as Intl.NumberFormatOptions);
 
 /** Texto del valor de una capa en un punto (o null si no hay dato). */
 export async function valorEn(c: CapaCmp, lng: number, lat: number, zoomMapa: number): Promise<{ texto: string; color?: string } | null> {
@@ -232,7 +232,7 @@ function crearEspejo() {
   // cortina arrastrable
   el.cortina = document.createElement("div");
   el.cortina.className = "cortina";
-  el.cortina.innerHTML = `<span class="cort-lado izq">Ecosistemas 2026</span><button type="button" class="cort-asa" aria-label="Mover la cortina de comparación" title="Arrastra para comparar">⇔</button><span class="cort-lado der"></span>`;
+  el.cortina.innerHTML = `<span class="cort-lado izq">Ecosistemas 2026</span><button type="button" class="cort-asa" aria-label="Mover la cortina de comparación" title="Arrastre para comparar">⇔</button><span class="cort-lado der"></span>`;
   el.etiq = el.cortina.querySelector(".der")!;
   cont.appendChild(el.cortina);
   const asa = el.cortina.querySelector<HTMLButtonElement>(".cort-asa")!;
@@ -354,7 +354,7 @@ export async function iniciarComparacion(mapa: MapaML) {
   el.panel.hidden = true;
   const grupos = [...new Set(lista.map((c) => c.grupo))];
   el.panel.innerHTML = `<div class="cmp-cab"><b>Comparar con</b><button type="button" class="cmp-cerrar" aria-label="Cerrar">×</button></div>
-    <button type="button" class="cmp-sel" aria-expanded="true" aria-controls="cmp-lista"><span>Elige una capa</span><span class="cmp-flecha" aria-hidden="true">▾</span></button>
+    <button type="button" class="cmp-sel" aria-expanded="true" aria-controls="cmp-lista"><span>Elija una capa</span><span class="cmp-flecha" aria-hidden="true">▾</span></button>
     <div id="cmp-lista" class="cmp-lista" role="radiogroup" aria-label="Capa de comparación">
       <label class="cmp-op"><input type="radio" name="cmp-capa" value="" checked> Ninguna</label>${grupos
         .map((g) => `<p class="cmp-grupo">${esc(g)}</p>${lista
@@ -367,7 +367,7 @@ export async function iniciarComparacion(mapa: MapaML) {
         .join("")}
     </div>
     <label class="cmp-completa"><input type="checkbox"> Ver la capa completa (sin cortina)</label>
-    <p class="cmp-ayuda">Arrastra la cortina: a la izquierda el Mapa de Ecosistemas 2026, a la derecha la capa elegida. Al hacer clic en el mapa verás el valor de todos los criterios en ese punto.</p>
+    <p class="cmp-ayuda">Arrastre la cortina: a la izquierda el Mapa de Ecosistemas 2026, a la derecha la capa elegida. Al hacer clic en el mapa verá el valor de todos los criterios en ese punto.</p>
     <div class="cmp-leyenda"></div>`;
   cont.appendChild(el.panel);
   el.sel = el.panel.querySelector(".cmp-sel")!;
@@ -390,7 +390,7 @@ export async function iniciarComparacion(mapa: MapaML) {
   el.lista.addEventListener("change", (ev) => {
     const v = (ev.target as HTMLInputElement).value;
     elegir(v);
-    el.sel.querySelector("span")!.textContent = v ? porId.get(v)!.nombre : "Elige una capa";
+    el.sel.querySelector("span")!.textContent = v ? porId.get(v)!.nombre : "Elija una capa";
     if (v) desplegar(false);
   });
   el.completa.addEventListener("change", () => {

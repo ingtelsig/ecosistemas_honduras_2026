@@ -217,6 +217,7 @@ NOTA_SIN = {
     "pasto": "El mapa de 2002 incluyó pastizales y cultivos en un único sistema agropecuario (SPA).",
     "artificial": "El mapa de 2002 no tenía una clase equivalente; estas superficies quedaban dentro de las unidades vecinas.",
     "seco_montano": "El mapa de 2002 no reconoció bosques secos montanos: la única formación decidua (IB1) se cartografió en seis parches de tierras bajas del sur. La equivalencia es solo fisonómica.",
+    "arrecife": "El manual de 2002 no describió ecosistemas marinos; su capa digital solo incluía polígonos de arrecife coralino como referencia geográfica.",
     "abierto": "El mapa de 2002 no tenía una clase de bosque latifoliado abierto o perturbado; la mayor parte de esta superficie estaba en el sistema agropecuario.",
 }
 
@@ -256,7 +257,8 @@ EQUIV[614] = (_g("SPA", "VD1"), None)
 EQUIV[615] = (_g("SA"), None)
 EQUIV[6151] = (_g("SA", "IA5a", "IA5b"), None)
 for c in (617, 618, 634, 635, 6165, 6173, 16201, 16202, 16203, 16204): EQUIV[c] = ([], "marino")
-EQUIV[616] = (_g("ARR"), "marino")
+EQUIV[616] = (_g("ARR"), None)  # v7: sin la nota genérica marina, que lo contradecía
+EQUIV[634] = ([], "arrecife")  # v7: coincide en parte con los polígonos de arrecife de 2002
 EQUIV[624] = (_g("SPC1"), None)
 EQUIV[625] = ([], "artificial")
 EQUIV[629] = ([], "abierto")
@@ -265,7 +267,7 @@ for c in (6061, 6062, 6063, 6064, 6065): EQUIV[c] = (_g("RIO"), "rio")
 EQUIV[6111] = (_g("SA", "VII"), None)
 EQUIV[6112] = (_g("SA", "VII"), None)
 EQUIV[6113] = (_g("SA", "VC", "VD1"), None)
-EQUIV[7201] = ([], "artificial")
+EQUIV[7201] = (_g("SA"), None)  # v7: el 68,6 % coincide con sistemas acuáticos (SA1)
 EQUIV[6202] = (_g("VE1", "VIB"), None)
 EQUIV[6205] = (_g("VIB", "IA1g"), None)
 for c in (6261, 6271): EQUIV[c] = (_g("IA5a"), None)
@@ -321,6 +323,9 @@ def frase_coincidencia(codigo):
     if c is None:
         return ""
     if c["pct_fuera"] > 95:
+        if [k for k in eq if k != "SPA"] and c["pct_equiv"] >= 0.5:
+            return (f"El {fmt(c['pct_equiv'])} % de su superficie de 2026 coincide con esas categorías de 2002; el resto "
+                    "queda fuera de la extensión del mapa de 2002, que no abarcaba el ámbito marino.")
         return "Su superficie queda fuera de la extensión del mapa de 2002, que no abarcaba el ámbito marino."
     frases = []
     natural_eq = [k for k in eq if k != "SPA"]
@@ -336,7 +341,11 @@ def frase_coincidencia(codigo):
         frases.append(f"el {fmt(c['pct_spa'])} % estaba cartografiado como sistema agropecuario")
     otros = [(k, v) for k, v in c["por_clave"].items()
              if isinstance(k, str) and k not in eq and k != "SPA" and v >= 5][:2]
-    if otros:
+    if otros and not frases:  # v7: sin categoría equivalente, la frase no puede empezar por «el resto»
+        frases.append("su superficie coincide sobre todo con " + " y ".join(f"{_nom(k)} ({fmt(v)} %)" for k, v in otros))
+        if c["pct_fuera"] >= 5:
+            frases.append(f"el {fmt(c['pct_fuera'])} % queda fuera de la extensión del mapa de 2002")
+    elif otros:
         frases.append("el resto coincide sobre todo con " + " y ".join(f"{_nom(k)} ({fmt(v)} %)" for k, v in otros))
     if not frases:
         return ""

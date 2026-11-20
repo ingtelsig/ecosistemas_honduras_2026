@@ -59,7 +59,10 @@ export function agregarControl3D(principal: MapaML) {
   principal.addControl(new maplibregl.TerrainControl({ source: DEM, exaggeration: EXAGERACION }), "top-right");
   const titulo = () => {
     const b = principal.getContainer().querySelector<HTMLButtonElement>(".maplibregl-ctrl-terrain, .maplibregl-ctrl-terrain-enabled");
-    if (b) b.title = activo ? "Volver a la vista plana (2D)" : "Vista 3D del relieve (arrastre con clic derecho o Ctrl para inclinar y girar)";
+    if (!b) return;
+    b.title = activo ? "Volver a la vista plana (2D)" : "Vista 3D del relieve (arrastre con clic derecho o Ctrl para inclinar y girar)";
+    b.setAttribute("aria-label", "Vista 3D del relieve");
+    b.setAttribute("aria-pressed", String(activo));
   };
   principal.on("terrain", () => {
     const si = !!principal.getTerrain();

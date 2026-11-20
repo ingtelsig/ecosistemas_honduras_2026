@@ -1,7 +1,7 @@
 import maplibregl, { type Map as MapaML, type MapGeoJSONFeature } from "maplibre-gl";
 import { htmlPunto, puntoEn } from "./puntos";
 import "./estilos.css";
-import { CAPAS, cargarCatalogo, cargarManifiesto, cargarUnidades, ha, pct, type Catalogo, type ClaveCapa, type Manifiesto, type Unidad } from "./datos";
+import { CAPAS, cargarCatalogo, cargarManifiesto, cargarUnidades, fechaLarga, ha, pct, type Catalogo, type ClaveCapa, type Manifiesto, type Unidad } from "./datos";
 import { capturar, crearMapa, encuadrar, limites, mostrarCapa, refrescarEcosistemas, seleccionar } from "./mapa";
 import { claseDe, colorDeGrupo, csv, descargar, resumir, slug, unidadNacional, type Resumen } from "./resumen";
 import { codigoEn, fijarColores, registrarProtocolo } from "./teselas";
@@ -105,8 +105,11 @@ async function cambiarCapa(capa: ClaveCapa, limpiar = true) {
   E.capa = capa;
   document.querySelectorAll<HTMLButtonElement>("#selector-capas button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.capa === capa)));
   $("filtro-depto").hidden = capa !== "municipios";
-  E.unidades = await cargarUnidades(capa);
+  const unidades = await cargarUnidades(capa);
+  if (E.capa !== capa) return; // el usuario ya eligió otra capa
+  E.unidades = unidades;
   await mostrarCapa(E.mapa, capa);
+  if (E.capa !== capa) return;
   if (limpiar) await elegir(null);
   pintarLista();
 }
@@ -345,18 +348,29 @@ function construirAcerca() {
     <p>Presenta el <b>Mapa de Ecosistemas de Honduras 2026</b>: 115 clases nacionales en 14 grupos, cartografiadas a 30 m, con su correspondencia a la Tipología Global de Ecosistemas de la UICN.</p>
     <p>Elija una unidad (área protegida, pueblo indígena, departamento, municipio, cuenca, subcuenca o microcuenca declarada) para ver qué ecosistemas contiene y descargar su reporte en PDF o sus cifras en CSV. Un clic en el mapa identifica la clase de ecosistema de ese punto.</p>
     <h3>Cómo se calculan las superficies</h3>
-    <p>Se cuentan las celdas de 30 × 30 m (0,09 ha) del ráster maestro cuyo centro cae dentro de cada unidad. Son superficies cartográficas. Los totales nacionales oficiales aplican un ajuste proporcional por dominio que no se reparte por unidad.</p>
+    <p>Se cuentan las celdas de 30 × 30 m (0.09 ha) del ráster maestro cuyo centro cae dentro de cada unidad. Son superficies cartográficas. Los totales nacionales oficiales aplican un ajuste proporcional por dominio que no se reparte por unidad.</p>
     <h3>Fuentes</h3>
     <ul>
       <li>Ecosistemas: ${esc(E.man.raster.archivo)} (sha256 ${E.man.raster.sha256.slice(0, 12)}…).</li>
-      <li>Manglares ajustados por costa: 1.459,5 ha de manglar alto (6261 → 6262) y 11,2 ha de manglar bajo (6271 → 6272) del Golfo de Fonseca pasan a las clases del Pacífico, y 7,3 ha de la costa norte (6272 → 6271) a la del Caribe. El ajuste está en el ráster maestro de la entrega (Control/Ajuste_manglares_R26.csv).</li>
+      <li>Manglares ajustados por costa: 1,459.5 ha de manglar alto (6261 → 6262) y 11.2 ha de manglar bajo (6271 → 6272) del Golfo de Fonseca pasan a las clases del Pacífico, y 7.3 ha de la costa norte (6272 → 6271) a la del Caribe. El ajuste está incluido en el ráster maestro de la entrega.</li>
       <li>Áreas protegidas: ${esc(f.areas_protegidas ?? "")}.</li>
       <li>Departamentos y municipios: ${esc(f.municipios ?? "")}.</li>
       <li>Pueblos indígenas y afrohondureños: ${esc(f.pueblos_indigenas ?? "")}. La superficie se mide solo dentro del mapa 2026 (territorio y espacio marino de Honduras).</li>
       <li>Cuencas y subcuencas: ${esc(f.cuencas ?? "")}; ${esc(f.subcuencas ?? "")}.</li>
       <li>Microcuencas declaradas: ${esc(f.microcuencas ?? "")}. Pueden solaparse; cada una cuenta su superficie completa.</li>
     </ul>
-    <p class="nota">Datos generados el ${esc(E.man.generado)}. Esta aplicación es estática: no usa servidores ni servicios externos.</p>`;
+    <h3>Créditos</h3>
+    <div class="creditos-logos">
+      <img src="logos/logos_institucionales.png" alt="Cooperación alemana (BMZ), KfW, UICN, CCAD y SICA" />
+      <img src="logos/logo_serna.png" alt="Secretaría de Recursos Naturales y Ambiente (SERNA), Dirección General de Biodiversidad (DiBio)" />
+    </div>
+    <p>Estudio realizado en el marco del <b>Programa de Biodiversidad Enlazando el Paisaje Centroamericano</b>, financiado por el Gobierno de la República Federal de Alemania por medio del Ministerio Federal de Cooperación Económica y Desarrollo (BMZ) y el KfW, implementado por la Unión Internacional para la Conservación de la Naturaleza (UICN), con el apoyo de UICN Honduras, y coordinado regionalmente con la Comisión Centroamericana de Ambiente y Desarrollo (CCAD) del SICA.</p>
+    <p>Contraparte nacional oficial: Secretaría de Recursos Naturales y Ambiente (SERNA), Dirección General de Biodiversidad (DiBio).</p>
+    <p>Elaborado bajo contrato por:</p>
+    <div class="creditos-logos"><img class="logo-ing" src="logos/logo_intelsig.png" alt="INGTELSIG" /></div>
+    <h3>Cita sugerida</h3>
+    <p>INGTELSIG (2026). Actualización del Mapa de Ecosistemas de Honduras. Informe Técnico Final. Programa de Biodiversidad Enlazando el Paisaje Centroamericano, UICN, y SERNA–DiBio.</p>
+    <p class="nota">Datos generados el ${esc(fechaLarga(E.man.generado))}. La aplicación es estática y sus datos se sirven desde este mismo sitio; los mapas base (Esri y EOX) y el relieve 3D (teselas de elevación de AWS) se cargan desde servicios externos.</p>`;
 }
 
 // ---------------------------------------------------------------- eventos
@@ -427,7 +441,15 @@ function enlazarEventos() {
     E.visibles = new Set(E.sel.clases.map(([c]) => c));
     aplicarVisibles();
   };
-  $<HTMLInputElement>("opacidad").addEventListener("input", (e) => E.mapa.setPaintProperty("ecosistemas", "raster-opacity", +(e.target as HTMLInputElement).value));
+  const opacidad = $<HTMLInputElement>("opacidad");
+  opacidad.addEventListener("input", () => {
+    E.mapa.setPaintProperty("ecosistemas", "raster-opacity", +opacidad.value);
+    document.dispatchEvent(new CustomEvent("opacidad-eco", { detail: { valor: +opacidad.value, origen: "panel" } }));
+  });
+  document.addEventListener("opacidad-eco", (ev) => {
+    const { valor, origen } = (ev as CustomEvent<{ valor: number; origen: string }>).detail;
+    if (origen !== "panel") opacidad.value = String(Math.max(0.2, valor));
+  });
 
   // mapa: resaltar unidades y consultar la clase
   const m = E.mapa;
@@ -446,7 +468,7 @@ function enlazarEventos() {
     const pt = puntoEn(m, e.point);
     if (pt) {
       popup?.remove();
-      popup = new maplibregl.Popup({ maxWidth: "360px", className: "pop-punto" }).setLngLat((pt.geometry as GeoJSON.Point).coordinates as [number, number]).setHTML(htmlPunto(pt)).addTo(m);
+      popup = new maplibregl.Popup({ maxWidth: "min(360px, calc(100vw - 24px))", className: "pop-punto" }).setLngLat((pt.geometry as GeoJSON.Point).coordinates as [number, number]).setHTML(htmlPunto(pt)).addTo(m);
       return;
     }
     const [cod, f] = await Promise.all([
@@ -464,7 +486,7 @@ function enlazarEventos() {
         : `<p class="pop-vacio">Sin clase de ecosistema en este punto.</p>`
     }${act ? `<p class="pop-cmp"><span>${esc(act.nombre)}:</span> ${vAct ? `${vAct.color ? `<i style="background:${vAct.color}"></i>` : ""}<b>${esc(vAct.texto)}</b>` : "sin dato"}</p>` : ""}<p class="pop-crit"><button class="btn enlace" data-criterios>Ver criterios ecológicos en este punto</button></p><div class="pop-crit-tabla"></div>${nomU ? `<p class="pop-unidad">${esc(nomU)} <button class="btn enlace" data-ver="${esc(String(f!.properties!.id))}">Ver resumen</button></p>` : ""}`;
     popup?.remove();
-    popup = new maplibregl.Popup({ maxWidth: "320px" }).setLngLat(e.lngLat).setHTML(html).addTo(m);
+    popup = new maplibregl.Popup({ maxWidth: "min(320px, calc(100vw - 24px))" }).setLngLat(e.lngLat).setHTML(html).addTo(m);
     const pe = popup.getElement();
     pe.querySelector<HTMLButtonElement>("[data-criterios]")?.addEventListener("click", async (ev) => {
       const b = ev.currentTarget as HTMLButtonElement;

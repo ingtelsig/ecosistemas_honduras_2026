@@ -1,7 +1,7 @@
 // Reporte PDF por unidad, generado en el navegador con jsPDF y jspdf-autotable.
 import { jsPDF } from "jspdf";
 import autoTable, { type RowInput } from "jspdf-autotable";
-import { ha, pct, type Catalogo, type Manifiesto } from "./datos";
+import { fechaLarga, ha, pct, type Catalogo, type Manifiesto } from "./datos";
 import type { Fila, FilaClase, Resumen } from "./resumen";
 import { arbolGET, nombreGET, rutaGET } from "./leyenda";
 
@@ -13,7 +13,7 @@ const ANCHO = 210 - 2 * M;
 
 const rgb = (hex: string): [number, number, number] => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16)) as [number, number, number];
 const corto = (s: string, n: number) => (s.length > n ? s.slice(0, n - 1) + "…" : s);
-const fechaHoy = () => new Date().toLocaleDateString("es-HN", { day: "2-digit", month: "long", year: "numeric" });
+const fechaHoy = () => new Date().toLocaleDateString("es-HN", { day: "numeric", month: "long", year: "numeric" });
 
 export interface DatosReporte {
   resumen: Resumen;
@@ -39,11 +39,19 @@ export function crearPDF(d: DatosReporte): jsPDF {
     doc.setDrawColor(...VERDE).setLineWidth(0.4).line(M, y + 1.8, M + ANCHO, y + 1.8);
     return y + 8;
   };
+  const LIMITE = 276; // último renglón del cuerpo, por encima de la línea del pie (284 mm)
   const cuerpo = (t: string, y: number, tam = 9.5, color = TINTA) => {
-    doc.setFont("helvetica", "normal").setFontSize(tam).setTextColor(...color);
-    const lineas = doc.splitTextToSize(t, ANCHO) as string[];
-    doc.text(lineas, M, y);
-    return y + lineas.length * tam * 0.42 + 2;
+    const al = tam * 0.42;
+    doc.setFont("helvetica", "normal").setFontSize(tam);
+    for (const l of doc.splitTextToSize(t, ANCHO) as string[]) {
+      if (y > LIMITE) {
+        doc.addPage();
+        y = 22;
+      }
+      doc.setFont("helvetica", "normal").setFontSize(tam).setTextColor(...color).text(l, M, y);
+      y += al;
+    }
+    return y + 2;
   };
 
   // ---------- Página 1: identificación, cifras clave, mapa y leyenda ----------
@@ -55,8 +63,10 @@ export function crearPDF(d: DatosReporte): jsPDF {
   const nombre = doc.splitTextToSize(r.unidad.nombre, ANCHO) as string[];
   doc.text(nombre, M, 30);
   let y = 30 + (nombre.length - 1) * 7.5 + 6.5;
-  doc.setFont("helvetica", "normal").setFontSize(10).setTextColor(...GRIS).text(d.contexto, M, y);
-  y += 7;
+  doc.setFont("helvetica", "normal").setFontSize(10).setTextColor(...GRIS);
+  const sub = doc.splitTextToSize(d.contexto, ANCHO) as string[];
+  doc.text(sub, M, y);
+  y += 7 + (sub.length - 1) * 4.3;
   if (r.filtro !== null) {
     const t = `Filtro de clases aplicado en el visor: ${r.clases.length} de las ${r.unidad.clases.length} clases de la unidad (${ha(r.seleccion)} ha, ${pct((100 * r.seleccion) / r.total)} de ${ha(r.total)} ha medidas). Los porcentajes se expresan sobre la superficie total de la unidad.`;
     doc.setFontSize(8.5);
@@ -76,18 +86,24 @@ export function crearPDF(d: DatosReporte): jsPDF {
     ["Grupo dominante", `${corto(dominante?.nombre ?? "-", 44)} (${pct(dominante?.pct ?? 0)})`],
   ];
   const wC = ANCHO / 4;
+  doc.setFont("helvetica", "bold").setFontSize(8.2);
+  const lineasDom = (doc.splitTextToSize(cifras[3][1], wC - 7) as string[]).slice(0, 4);
+  const altoC = Math.max(17, 9.5 + lineasDom.length * 3.5);
   cifras.forEach(([et, v], i) => {
     const x = M + i * wC;
-    doc.setFillColor(243, 246, 243).roundedRect(x + 0.8, y, wC - 1.6, 17, 1.5, 1.5, "F");
+    doc.setFillColor(243, 246, 243).roundedRect(x + 0.8, y, wC - 1.6, altoC, 1.5, 1.5, "F");
     doc.setFont("helvetica", "normal").setFontSize(7.5).setTextColor(...GRIS).text(et.toUpperCase(), x + 3.5, y + 5.5);
     doc.setFont("helvetica", "bold").setFontSize(i === 3 ? 8.2 : 12).setTextColor(...TINTA);
-    doc.text(doc.splitTextToSize(v, wC - 7) as string[], x + 3.5, y + 11.8);
+    doc.text(i === 3 ? lineasDom : (doc.splitTextToSize(v, wC - 7) as string[]), x + 3.5, i === 3 ? y + 10.5 : y + 11.8);
   });
-  y += 22;
+  y += altoC + 5;
 
-  const altoMapa = ANCHO * 0.75;
-  doc.addImage(d.mapa, "JPEG", M, y, ANCHO, altoMapa, undefined, "FAST");
-  doc.setDrawColor(190, 196, 200).setLineWidth(0.3).rect(M, y, ANCHO, altoMapa);
+  const filasLeyenda = Math.ceil(Math.min(r.clases.length, 16) / 2);
+  const altoMapa = Math.min(ANCHO * 0.75, LIMITE - y - 6 - 4.5 - filasLeyenda * 5 - (r.clases.length > 16 ? 5 : 0));
+  const anchoMapa = altoMapa / 0.75;
+  const xMapa = M + (ANCHO - anchoMapa) / 2;
+  doc.addImage(d.mapa, "JPEG", xMapa, y, anchoMapa, altoMapa, undefined, "FAST");
+  doc.setDrawColor(190, 196, 200).setLineWidth(0.3).rect(xMapa, y, anchoMapa, altoMapa);
   y += altoMapa + 6;
 
   // Leyenda: clases principales en dos columnas
@@ -126,7 +142,7 @@ export function crearPDF(d: DatosReporte): jsPDF {
   const tabla = (cab: string, filas: Fila[], inicio: number) => {
     autoTable(doc, {
       startY: inicio,
-      margin: { left: M, right: M },
+      margin: { left: M, right: M, top: 20, bottom: 18 },
       head: [[cab, "Nombre", "Hectáreas", "%"]],
       body: filas.map((f) => [f.codigo, f.nombre, ha(f.ha), pct(f.pct)]),
       styles: { fontSize: 8, cellPadding: 1.4, textColor: TINTA },
@@ -138,7 +154,7 @@ export function crearPDF(d: DatosReporte): jsPDF {
   };
   y = tabla("Reino", r.get1, y);
   y = tabla("Bioma", r.get2, y);
-  cuerpo(
+  y = cuerpo(
     "Las clases con correspondencia a varios grupos funcionales (EFG) se informan como «asignación múltiple» para no contar dos veces la misma superficie.",
     y,
     7.8,
@@ -183,7 +199,7 @@ export function crearPDF(d: DatosReporte): jsPDF {
       columnStyles: {
         0: { cellWidth: 5 },
         1: { cellWidth: 13 },
-        3: { cellWidth: 15 },
+        3: { cellWidth: 24 },
         4: { halign: "right", cellWidth: 24 },
         5: { halign: "right", cellWidth: 13 },
       },
@@ -209,8 +225,11 @@ export function crearPDF(d: DatosReporte): jsPDF {
     if (!fs.length) continue;
     filasG.push(cab(0, `${g.codigo} ${g.nombre}`, fs), ...porHa(fs));
   }
-  doc.addPage();
-  y = 22;
+  if (y > 40) {
+    // si la nota de la página 2 pasó sola a una página nueva, la tabla sigue en esa misma página
+    doc.addPage();
+    y = 22;
+  }
   tablaJerarquica(
     "Clases presentes por grupo nacional",
     "Grupo nacional › unidad ecosistémica. Los porcentajes se expresan sobre la superficie total de la unidad.",
@@ -237,14 +256,14 @@ export function crearPDF(d: DatosReporte): jsPDF {
   }
   tablaJerarquica(
     "Clases presentes por jerarquía GET-UICN",
-    "Reino › Bioma › Grupo funcional (EFG) › unidad ecosistémica. Cada clase figura en su clase GET-UICN principal (la más probable); la columna de la primera tabla indica también los otros EFG posibles. La 635 está bajo M3.4 por relación contextual (geoforma).",
+    "Reino › Bioma › Grupo funcional (EFG) › unidad ecosistémica. Cada clase figura en su grupo funcional (EFG) GET-UICN principal (el más probable); la columna de la primera tabla indica también los otros EFG posibles. La 635 está bajo M3.4 por relación contextual (geoforma).",
     "Grupo",
     (f) => f.clase.grupo,
     filasT,
   );
 
   // ---------- Nota metodológica ----------
-  if (y > 230) {
+  if (y > LIMITE - 20) {
     doc.addPage();
     y = 22;
   }
@@ -253,12 +272,12 @@ export function crearPDF(d: DatosReporte): jsPDF {
   const capaFuente =
     d.capaNombre === "Área protegida" ? fuente("areas_protegidas") : d.capaNombre === "Pueblo indígena o afrohondureño" ? fuente("pueblos_indigenas") : d.capaNombre === "Departamento" ? fuente("departamentos") : d.capaNombre === "Municipio" ? fuente("municipios") : d.capaNombre === "Cuenca hidrográfica" ? fuente("cuencas") : d.capaNombre === "Subcuenca hidrográfica" ? fuente("subcuencas") : d.capaNombre === "Microcuenca declarada" ? fuente("microcuencas") : "";
   const notas = [
-    `Superficies medidas sobre el ráster maestro del Mapa de Ecosistemas de Honduras 2026 (archivo ${man.raster.archivo}), celdas de 30 × 30 m (0,09 ha) en EPSG:32616. Los manglares están ajustados por costa: las celdas de manglar del Golfo de Fonseca llevan las clases del Pacífico (6262, 6272) y las de la costa norte las del Caribe (6261, 6271). Una celda pertenece a la unidad cuando su centro cae dentro del límite.`,
-    "Son superficies cartográficas. Los totales nacionales oficiales aplican un ajuste proporcional por dominio (tierra 11.277.700 ha; mar 21.027.713,75 ha) que no se reparte por unidad, por lo que pueden diferir ligeramente de las cifras de este reporte.",
+    `Superficies medidas sobre el ráster maestro del Mapa de Ecosistemas de Honduras 2026 (archivo ${man.raster.archivo}), celdas de 30 × 30 m (0.09 ha) en EPSG:32616. Los manglares están ajustados por costa: las celdas de manglar del Golfo de Fonseca llevan las clases del Pacífico (6262, 6272) y las de la costa norte las del Caribe (6261, 6271). Una celda pertenece a la unidad cuando su centro cae dentro del límite.`,
+    "Son superficies cartográficas. Los totales nacionales oficiales aplican un ajuste proporcional por dominio (tierra 11,277,700 ha; mar 21,027,713.75 ha) que no se reparte por unidad, por lo que pueden diferir ligeramente de las cifras de este reporte.",
     "Clases y correspondencias GET-UICN según el catálogo oficial del Mapa de Ecosistemas 2026 (115 clases, 14 grupos nacionales).",
     capaFuente ? `Límites de la unidad: ${capaFuente}.` : "",
     r.unidad.id !== "HN" && d.capaNombre !== "Área protegida" ? "El porcentaje dentro del SINAPH usa la unión de las áreas protegidas declaradas del Geoportal ICF." : "",
-    `Cita sugerida: Mapa de Ecosistemas de Honduras 2026. SERNA, ICF, UICN ORMACC, CCAD/KfW; consultoría INGTELSIG. Reporte generado el ${fechaHoy()} con datos del ${man.generado}.`,
+    `Cita sugerida: INGTELSIG (2026). Actualización del Mapa de Ecosistemas de Honduras. Informe Técnico Final. Programa de Biodiversidad Enlazando el Paisaje Centroamericano, UICN, y SERNA–DiBio. Reporte generado el ${fechaHoy()} con datos del ${fechaLarga(man.generado)}.`,
   ].filter(Boolean);
   for (const n of notas) y = cuerpo(n, y, 8.2) + 1;
 

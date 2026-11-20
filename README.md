@@ -11,10 +11,10 @@ Aplicación web estática que presenta el **Mapa de Ecosistemas de Honduras 2026
 - Catálogo de fichas de las 115 unidades ecosistémicas. Se abre desde la pestaña Catálogo o con el botón **i** junto a cada clase: en la leyenda, en la tabla del resumen y en la consulta por clic.
 - El PDF lista las clases presentes por grupo nacional y por jerarquía GET-UICN.
 - Botón **Mapa base**: mapa base propio o mapas base gratuitos de Esri (imágenes satelitales, topográfico, calles, relieve sombreado, gris claro y gris oscuro) y el mosaico **Sentinel-2 sin nubes 2025** de EOX, con control de opacidad del mapa de ecosistemas. La elección se recuerda en el navegador y se aplica también al mapa de comparación y al PDF.
-- **Vista 3D** con el control de terreno de MapLibre (botón bajo el zoom): relieve exagerado ×1,5 y sombreado suave sobre el mapa, también en la comparación. El modelo de elevación son las Terrain Tiles libres de AWS (Mapzen/Tilezen, SRTM).
-- Botón **Puntos de referencia**: los 1.228 puntos del mapa en seis grupos de fuentes con símbolos en negro y blanco de formas distintas (triángulo negro para el levantamiento de campo 2026; fotointerpretación de expertos, IFN, hábitats marinos, PMP 2012 y sitios de monitoreo 2000), filtrables por grupo. Un clic muestra su tabla de atributos (fuente, clases de referencia y del mapa, GET L1–L3, trazabilidad). Los 320 puntos de campo 2026 (CAM) abren su ficha técnica de validación en PDF.
-- Las asignaciones múltiples (**MULT**) indican qué reinos, biomas o EFG reúnen: en la leyenda GET, en la ficha de cada clase y en las columnas `GET_L1_categorias`, `GET_L2_categorias` y `GET_L3_categorias` del CSV.
-- Zoom máximo fijado a la escala del mapa, 1:50.000 (escala nominal con píxel de 0,28 mm), que se muestra en la esquina inferior izquierda.
+- **Vista 3D** con el control de terreno de MapLibre (botón bajo el zoom): relieve exagerado ×1.5 y sombreado suave sobre el mapa, también en la comparación. El modelo de elevación son las Terrain Tiles libres de AWS (Mapzen/Tilezen, SRTM).
+- Botón **Puntos de referencia**: los 1,228 puntos del mapa en seis grupos de fuentes con símbolos en negro y blanco de formas distintas (triángulo negro para el levantamiento de campo 2026; fotointerpretación de expertos, INF, hábitats marinos, PMP 2012 y sitios de monitoreo 2000), filtrables por grupo. Un clic muestra su tabla de atributos (fuente, estrato de muestreo, clases de referencia y del mapa, GET L1–L3, trazabilidad). Los 320 puntos de campo 2026 (CAM) abren su ficha técnica de validación en PDF.
+- Las asignaciones múltiples (**MULT**, «asignación múltiple») indican qué reinos, biomas o EFG reúnen: en la leyenda GET, en la ficha de cada clase y en las columnas `GET_L1_categorias`, `GET_L2_categorias` y `GET_L3_categorias` del CSV; la regla estricta va en la columna `GET_L3_estricto`.
+- Zoom máximo fijado a la escala del mapa, 1:50,000 (escala nominal con píxel de 0.28 mm), que se muestra en la esquina inferior izquierda.
 
 No necesita servidores propios. El mapa base por defecto se dibuja con los límites del proyecto, y el ráster va en un único archivo PMTiles que se lee por rangos HTTP. El relieve 3D se lee de `elevation-tiles-prod.s3.amazonaws.com`. Los mapas base opcionales se cargan desde los servicios de teselas de ArcGIS Online (`server.arcgisonline.com`) y de EOX (`tiles.maps.eox.at`, Sentinel-2 cloudless 2025, licencia CC BY-NC-SA 4.0: uso no comercial), con su atribución; están en `src/mapabase.ts`. Cuando EOX publique el mosaico de un año nuevo basta con cambiar el año en la URL de ese archivo.
 
@@ -47,7 +47,7 @@ El resultado queda en `dist/`; `npm run preview` lo sirve en local.
 
 Requisitos: Python 3.11+ con `rasterio`, `geopandas`, `shapely>=2.1`, `numpy`, `pandas` y `pmtiles`.
 
-Los scripts leen el ráster maestro de la entrega (`Entrega_final_R26/Geodatos/Mapa_Ecosistemas_R26_30m.tif`). Desde el 17 de noviembre de 2026 ese maestro incluye el **ajuste de manglares por costa** (`Entrega_final_R26/scripts/18_ajuste_manglares_R26.py`): el manglar que tenía la clase del Caribe en el Golfo de Fonseca pasó a las del Pacífico (6261 → 6262: 1.459,53 ha; 6271 → 6272: 11,16 ha) y el que tenía la clase del Pacífico en la costa norte pasó a la del Caribe (6272 → 6271: 7,29 ha). Las superficies, los cruces territoriales, los indicadores y los catálogos de la entrega se recalcularon con ese maestro.
+Los scripts leen el ráster maestro de la entrega (`Entrega_final_R26/Geodatos/Mapa_Ecosistemas_R26_30m.tif`). Desde el 17 de noviembre de 2026 ese maestro incluye el **ajuste de manglares por costa** (`Entrega_final_R26/scripts/18_ajuste_manglares_R26.py`): el manglar que tenía la clase del Caribe en el Golfo de Fonseca pasó a las del Pacífico (6261 → 6262: 1,459.53 ha; 6271 → 6272: 11.16 ha) y el que tenía la clase del Pacífico en la costa norte pasó a la del Caribe (6272 → 6271: 7.29 ha). Las superficies, los cruces territoriales, los indicadores y los catálogos de la entrega se recalcularon con ese maestro.
 
 ```bash
 python datos/01_teselas_R26.py
@@ -89,7 +89,7 @@ Genera `public/data/capas/<id>.pmtiles` y `capas/capas.json`. Se puede pasar una
 
 Cada píxel guarda un índice de 8 bits: en capas continuas es el valor escalado entre un mínimo y un máximo (lineal o raíz cuadrada), en capas de clases es el código. El navegador colorea los índices y los traduce a valores al hacer clic. Las capas continuas llegan hasta zoom 10–11 (≈ 75–150 m por píxel) y las de clases hasta zoom 12.
 
-El piso altitudinal separa montano y altimontano (≥ 2.000 m, umbral de referencia: el mapa los agrupa en un solo piso). Cada capa tiene un botón **i** con su fuente y su uso en la clasificación (campo `uso` de `CAPAS`), y la cobertura 2024 va al final, antes del mapa 2002.
+El piso altitudinal separa montano y altimontano (≥ 2,000 m, umbral de referencia: el mapa los agrupa en un solo piso). Cada capa tiene un botón **i** con su fuente y su uso en la clasificación (campo `uso` de `CAPAS`), y la cobertura 2024 va al final, antes del mapa 2002.
 
 En el visor, el botón «Comparar» abre el selector de capa y una cortina deslizante: a la izquierda el R26, a la derecha la capa elegida. Al hacer clic en el mapa, «Ver criterios ecológicos en este punto» lee el valor de todas las capas en ese lugar.
 
@@ -99,7 +99,32 @@ En el visor, el botón «Comparar» abre el selector de capa y una cortina desli
 python datos/05_puntos_referencia.py
 ```
 
-Lee `Complementos_R26/Puntos_de_referencia_y_superficies_jerarquicas_R26.xlsx` (hojas `Base_Puntos_GET_UICN` y `Trazabilidad_GET_Ref`) y escribe `public/data/puntos/puntos.geojson`. Para los puntos de campo usa el Anexo 1 del Producto 3 (`Fichas_Campo_Individuales`, variable `VALIDACION_DIR`): la base de registros de campo vincula cada CAM-nnn con su ficha (el número del archivo de ficha es el del punto), y el script comprueba código de sitio y municipio antes de copiarla. Las fichas se guardan como `public/data/puntos/fichas/CAM-nnn.pdf` con las fuentes reducidas a los caracteres usados (de 1,3 GB a unos 54 MB, sin tocar las imágenes). No se publican nombres de técnicos ni fotografías aparte de lo que ya trae la ficha oficial.
+Lee `Complementos_R26/Puntos_de_referencia_y_superficies_jerarquicas_R26.xlsx` (hojas `Base_Puntos_GET_UICN` y `Trazabilidad_GET_Ref`) y escribe `public/data/puntos/puntos.geojson`. Para los puntos de campo usa el Anexo 1 del Producto 3 (`Fichas_Campo_Individuales`, variable `VALIDACION_DIR`): la base de registros de campo vincula cada CAM-nnn con su ficha (el número del archivo de ficha es el del punto), y el script comprueba código de sitio y municipio antes de copiarla. Las fichas se guardan como `public/data/puntos/fichas/CAM-nnn.pdf` con las fuentes reducidas a los caracteres usados (de 1.3 GB a unos 54 MB, sin tocar las imágenes). No se publican nombres de técnicos ni fotografías aparte de lo que ya trae la ficha oficial.
+
+### Revisión final de textos y datos
+
+Tras regenerar las fichas, la revisión final se aplica siempre en este orden (cada paso se puede repetir):
+
+```bash
+python -X utf8 datos/08_revision_v6.py
+```
+
+```bash
+python -X utf8 datos/09_correcciones_v7.py
+```
+
+```bash
+python -X utf8 datos/10_datos_v7.py
+```
+
+```bash
+python -X utf8 datos/11_formato_numerico.py
+```
+
+- `08_revision_v6.py` reescribe las 115 fichas desde `datos/_fichas_pre_v6` (indicadores, equivalencias con el mapa 2002 de `datos/texto_2002.py`, vertiente y entorno). De ellas, 79 conservan la sección de aportes de la revisión técnica.
+- `09_correcciones_v7.py` corrige las fichas y `clases.json`: nombres oficiales de los 14 grupos, citas, topónimos (La Mosquitia, Cruta, Leán), Inventario Nacional Forestal (INF), estaciones seca y lluviosa, especies y nombres comunes, alternativas GET (T1.3) y notas de las clases 601, 8121/8131 y 6111/615/6151.
+- `10_datos_v7.py` pone tildes y nombres oficiales en unidades, límites y puntos (departamentos, municipios, cuencas, áreas protegidas), y limpia la leyenda del mapa 2002, la capa de régimen climático y el manifiesto.
+- `11_formato_numerico.py` deja las cifras de los textos con el formato del informe técnico final: coma de miles y punto decimal (1,234.56). El CSV de descarga usa punto decimal sin separador de miles.
 
 ### Nombre del mapa
 
@@ -117,7 +142,7 @@ Las tres capas vienen de `territorios.gpkg` (`cuencas`, `subcuencas`, `microcuen
 
 `datos/nombres_ajustados.json` cambia el nombre de 8 clases en el geovisor (1322–1324, 1332–1334, 8132 y 8133): «seco» pasa a «estacional (semideciduo a deciduo)». Estas clases tienen la misma elevación y lluvia que sus pares estacionales; las separa la mayor deciduidad del dosel (EVI2). Los códigos y superficies R26 no cambian. Lo leen `02_limites_y_resumenes.py` (para `clases.json`) y `03_fichas.py`, que además ajusta las frases de las fichas que describían la unidad como seca y añade una nota de ajuste al inicio de cada una.
 
-Las rutas de origen están al principio de cada script: el ráster maestro R26, el `.qml` de la simbología, el catálogo de clases, `territorios.gpkg` y los cruces territoriales oficiales. El segundo script compara cada unidad con `cruces_territoriales.csv` de la entrega R26 y escribe el resultado en `manifiesto.json` (`control_cruces_R26`). En la versión actual la diferencia es de 0,00 ha en las tres capas.
+Las rutas de origen están al principio de cada script: el ráster maestro R26, el `.qml` de la simbología, el catálogo de clases, `territorios.gpkg` y los cruces territoriales oficiales. El segundo script compara cada unidad con `cruces_territoriales.csv` de la entrega R26 y escribe el resultado en `manifiesto.json` (`control_cruces_R26`). En la versión actual la diferencia es de 0.00 ha en las tres capas.
 
 ### Pueblos indígenas y afrohondureños
 
@@ -138,9 +163,11 @@ Límites de GitHub Pages: el sitio publicado no puede pasar de 1 GB y ningún ar
 
 ## Fuentes
 
-- Ecosistemas: Mapa de Ecosistemas de Honduras R26 (`Mapa_Ecosistemas_R26_30m.tif`). SERNA, ICF, UICN ORMACC, CCAD/KfW; consultoría INGTELSIG.
+- Ecosistemas: Mapa de Ecosistemas de Honduras 2026 (`Mapa_Ecosistemas_R26_30m.tif`).
+
+Cita sugerida: INGTELSIG (2026). Actualización del Mapa de Ecosistemas de Honduras. Informe Técnico Final. Programa de Biodiversidad Enlazando el Paisaje Centroamericano, UICN, y SERNA–DiBio.
 - Áreas protegidas: ICF, Geoportal, áreas protegidas declaradas del SINAPH (75 áreas).
 - Pueblos indígenas y afrohondureños: UICN-Honduras.
 - Departamentos y municipios: OCHA/HDX, límites administrativos a partir de SINIT/SEPLAN 2010 (CC BY-IGO).
 
-Las superficies son cartográficas: celdas de 0,09 ha cuyo centro cae dentro de la unidad. Los totales nacionales oficiales aplican un ajuste proporcional por dominio que no se reparte por unidad.
+Las superficies son cartográficas: celdas de 0.09 ha cuyo centro cae dentro de la unidad. Los totales nacionales oficiales aplican un ajuste proporcional por dominio que no se reparte por unidad.
