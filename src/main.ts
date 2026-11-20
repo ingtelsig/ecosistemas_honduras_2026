@@ -17,7 +17,7 @@ interface Estado {
   cat: Catalogo;
   man: Manifiesto;
   mapa: MapaML;
-  capa: ClaveCapa;
+  capa: ClaveCapa | null; // null: ninguna unidad de reporte elegida, sin límites en el mapa
   unidades: Unidad[];
   deptos: Map<string, string>;
   sel: Unidad | null;
@@ -32,7 +32,7 @@ async function iniciar() {
   const [cat, man, mapa, deptos] = await Promise.all([cargarCatalogo(), cargarManifiesto(), crearMapa("mapa"), cargarUnidades("departamentos")]);
   E = {
     cat, man, mapa,
-    capa: "areas_protegidas",
+    capa: null,
     unidades: [],
     deptos: new Map(deptos.map((d) => [d.id, d.nombre])),
     sel: null,
@@ -62,7 +62,9 @@ async function iniciar() {
 
   const q = new URLSearchParams(location.search);
   const capa = q.get("capa") as ClaveCapa | null;
-  await cambiarCapa(capa && CAPAS.some((c) => c.clave === capa && c.disponible) ? capa : "areas_protegidas", false);
+  // sin ?capa= en la dirección no se elige ninguna unidad de reporte: el mapa empieza sin límites
+  if (capa && CAPAS.some((c) => c.clave === capa && c.disponible)) await cambiarCapa(capa, false);
+  else pintarLista();
   const id = q.get("id");
   const u = id ? E.unidades.find((x) => x.id === id) : null;
   if (u) await elegir(u);
@@ -96,16 +98,19 @@ function construirCapas() {
   sel.innerHTML = `<option value="">Todos los departamentos</option>` + [...E.deptos].sort((a, b) => a[1].localeCompare(b[1], "es")).map(([id, n]) => `<option value="${id}">${esc(n)}</option>`).join("");
 }
 
-async function cambiarCapa(capa: ClaveCapa, limpiar = true) {
-  const def = CAPAS.find((c) => c.clave === capa)!;
+async function cambiarCapa(pedida: ClaveCapa, limpiar = true) {
+  const def = CAPAS.find((c) => c.clave === pedida)!;
   if (!def.disponible) {
     aviso(def.nota!);
     return;
   }
+  // un segundo clic sobre la unidad activa la desactiva y quita sus límites del mapa
+  const capa = E.capa === pedida && limpiar ? null : pedida;
   E.capa = capa;
   document.querySelectorAll<HTMLButtonElement>("#selector-capas button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.capa === capa)));
   $("filtro-depto").hidden = capa !== "municipios";
-  const unidades = await cargarUnidades(capa);
+  $("campo-buscar").hidden = !capa;
+  const unidades = capa ? await cargarUnidades(capa) : [];
   if (E.capa !== capa) return; // el usuario ya eligió otra capa
   E.unidades = unidades;
   await mostrarCapa(E.mapa, capa);
@@ -115,6 +120,11 @@ async function cambiarCapa(capa: ClaveCapa, limpiar = true) {
 }
 
 function pintarLista() {
+  if (!E.capa) {
+    $("lista-filtro").hidden = true;
+    $("lista").innerHTML = `<li class="vacio">Elija una unidad de reporte para ver sus límites en el mapa y la lista de unidades.</li>`;
+    return;
+  }
   const texto = plano($<HTMLInputElement>("buscar").value.trim());
   const depto = E.capa === "municipios" ? $<HTMLSelectElement>("sel-depto").value : "";
   const filtro = E.visibles.size < E.cat.clases.length;
@@ -148,12 +158,12 @@ function pintarLista() {
 // ---------------------------------------------------------------- selección y resumen
 async function elegir(u: Unidad | null) {
   E.sel = u;
-  const fc = await limites(E.capa);
-  const f = u ? (fc.features.find((x) => x.properties?.id === u.id) ?? null) : null;
+  const fc = E.capa ? await limites(E.capa) : null;
+  const f = u && fc ? (fc.features.find((x) => x.properties?.id === u.id) ?? null) : null;
   seleccionar(E.mapa, f);
   if (u) encuadrar(E.mapa, u.bbox);
   const q = new URLSearchParams();
-  if (u) {
+  if (u && E.capa) {
     q.set("capa", E.capa);
     q.set("id", u.id);
   }
@@ -178,7 +188,7 @@ function contextoDe(u: Unidad): string {
 }
 
 function nombreCapa(u: Unidad) {
-  return u.id === "HN" ? "País" : CAPAS.find((c) => c.clave === E.capa)!.singular;
+  return u.id === "HN" ? "País" : (CAPAS.find((c) => c.clave === E.capa)?.singular ?? "Unidad");
 }
 
 function pintarResumen() {

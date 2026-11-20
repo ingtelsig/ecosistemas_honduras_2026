@@ -130,8 +130,9 @@ export function limites(capa: ClaveCapa): Promise<GeoJSON.FeatureCollection> {
   return cacheLimites.get(capa)!;
 }
 
-export async function mostrarCapa(mapa: MapaML, capa: ClaveCapa) {
-  const datos = await limites(capa);
+/** Dibuja los límites de la capa de unidades; sin capa (null) no se dibuja ningún límite. */
+export async function mostrarCapa(mapa: MapaML, capa: ClaveCapa | null) {
+  const datos = capa ? await limites(capa) : vacio;
   (mapa.getSource("unidades") as GeoJSONSource).setData(datos);
   espejar("unidades", datos);
 }
