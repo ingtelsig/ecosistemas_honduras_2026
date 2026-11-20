@@ -361,3 +361,7 @@ summary .nom .mult-incl { display: inline; margin-left: 3px; }
 
 /* foco visible */
 button:focus-visible, a:focus-visible, select:focus-visible, input:focus-visible, summary:focus-visible, .maplibregl-ctrl button:focus-visible { outline: 3px solid #ffbf47; outline-offset: 1px; }
+
+/* códigos GET enlazados a global-ecosystems.org */
+a.efg { color: inherit; text-decoration: underline dotted; text-underline-offset: 2px; }
+a.efg:hover { color: var(--acento, #0b6e4f); text-decoration-style: solid; }

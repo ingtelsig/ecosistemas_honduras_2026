@@ -30,6 +30,31 @@ const cargar = (cod: number) => {
   return cache.get(cod)!;
 };
 
+// grupos funcionales de la GET v2.1 (Keith et al., 2022): cada código del texto enlaza con su página en global-ecosystems.org
+const N_EFG: Record<string, number> = { T1: 4, T2: 6, T3: 4, T4: 5, T5: 5, T6: 5, T7: 5, S1: 2, S2: 1, SF1: 2, SF2: 2, SM1: 3, TF1: 7,
+  F1: 7, F2: 10, F3: 5, FM1: 3, M1: 10, M2: 5, M3: 7, M4: 2, MT1: 4, MT2: 2, MT3: 1, MFT1: 3 };
+const EFG = new Set(Object.entries(N_EFG).flatMap(([b, n]) => Array.from({ length: n }, (_, i) => `${b}.${i + 1}`)));
+const PAT_EFG = /(?<![\w./])((?:MFT|SF|SM|TF|FM|MT|T|S|F|M)\d{1,2}\.\d{1,2})(?!\w)(?!\.\d)/g;
+
+/** Enlaza los códigos GET del HTML (fuera de etiquetas y de enlaces existentes). */
+export function enlazarGET(html: string): string {
+  let dentroA = 0;
+  return html
+    .split(/(<[^>]+>)/)
+    .map((t) => {
+      if (t.startsWith("<")) {
+        if (/^<a[\s>]/i.test(t)) dentroA++;
+        else if (/^<\/a>/i.test(t)) dentroA = Math.max(0, dentroA - 1);
+        return t;
+      }
+      if (dentroA) return t;
+      return t.replace(PAT_EFG, (m: string) =>
+        EFG.has(m) ? `<a class="efg" href="https://global-ecosystems.org/explore/groups/${m}" target="_blank" rel="noopener" title="Ver ${m} en la Tipología Global de Ecosistemas de la UICN">${m}</a>` : m,
+      );
+    })
+    .join("");
+}
+
 /** Botón pequeño de información que abre la ficha de la clase. */
 export const botonInfo = (c: { codigo: number; nombre: string }) =>
   `<button type="button" class="info" data-ficha="${c.codigo}" title="Ver la ficha de ${esc(c.nombre)}" aria-label="Ver la ficha de ${esc(c.nombre)}">i</button>`;
@@ -73,7 +98,7 @@ function bloquesHTML(bs: Bloque[]): string {
       }
     }
   }
-  return html + (lista ? "</ul>" : "");
+  return enlazarGET(html + (lista ? "</ul>" : ""));
 }
 
 export interface ContextoFicha {
@@ -137,7 +162,7 @@ function cabecera(c: Clase): string {
   const u = ctx.unidad;
   const enU = u?.clases.find(([k]) => k === c.codigo);
   const totalU = u ? u.clases.reduce((s, [, h]) => s + h, 0) : 0;
-  return `
+  return enlazarGET(`
     <div class="f-cab">
       <i class="f-color" style="background:${c.color}"></i>
       <div>
@@ -150,7 +175,7 @@ function cabecera(c: Clase): string {
           u && enU ? ` · En ${esc(u.nombre)}: <b>${ha(enU[1])} ha</b> (${pct((100 * enU[1]) / totalU)})` : ""
         }</p>
       </div>
-    </div>`;
+    </div>`);
 }
 
 export async function abrirFicha(cod: number) {
