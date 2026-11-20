@@ -277,6 +277,8 @@ PREFIJOS = [
 ]
 BOSQUES_AJ = {1322, 1323, 1324, 1332, 1333, 1334}
 CAFES_AJ = {8132, 8133}
+if not any(k.isdigit() for k in json.loads((AQUI / "nombres_ajustados.json").read_text(encoding="utf-8"))):
+    PREFIJOS, BOSQUES_AJ, CAFES_AJ = [], set(), set()  # ajuste retirado: nombres oficiales R26
 SECO = re.compile(r"\b(?:clima )?(sec[oa]s?)(?: (?:o|/) deciduos?)?\b")
 COD = re.compile(r"(?<![\d.,])(\d{3,4})(?![\d.,]?\d)")
 

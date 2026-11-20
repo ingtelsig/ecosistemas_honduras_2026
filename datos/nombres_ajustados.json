@@ -1,20 +1,3 @@
 {
-  "_nota": "Nombres ajustados en el geovisor. Estas clases no se distinguen de sus pares 'estacionales' (12xx, 8122-8123) por el clima (misma elevación y lluvia), sino por su mayor deciduidad (cambio estacional EVI2 ~0,30-0,33 frente a ~0,20). Por eso 'seco' se sustituye por 'estacional (semideciduo a deciduo)'. Los códigos y superficies R26 no cambian.",
-  "1322": "Bosque latifoliado estacional (semideciduo a deciduo), submontano, aluvial o mal drenado",
-  "1323": "Bosque latifoliado estacional (semideciduo a deciduo), submontano, moderadamente drenado",
-  "1324": "Bosque latifoliado estacional (semideciduo a deciduo), submontano, bien drenado",
-  "1332": "Bosque latifoliado estacional (semideciduo a deciduo), montano / altimontano, aluvial o mal drenado",
-  "1333": "Bosque latifoliado estacional (semideciduo a deciduo), montano / altimontano, moderadamente drenado",
-  "1334": "Bosque latifoliado estacional (semideciduo a deciduo), montano / altimontano, bien drenado",
-  "8132": "Sistema agroforestal cafetalero en clima estacional (entorno semideciduo a deciduo), submontano",
-  "8133": "Sistema agroforestal cafetalero en clima estacional (entorno semideciduo a deciduo), montano / altimontano",
-  "colores": {
-    "_nota": "Colores ajustados en el geovisor: verdes oliva cercanos a los del bosque estacional / semideciduo (1222-1224 y 1232-1234) en lugar de los ocres del bosque seco.",
-    "1332": "#6e9a3c",
-    "1333": "#7fab45",
-    "1334": "#90bb52",
-    "1322": "#6f741e",
-    "1323": "#878b22",
-    "1324": "#a0a42a"
-  }
+  "_nota": "Ajuste retirado el 19 de noviembre de 2026. Entre el 17 y el 19 de noviembre el geovisor llamó 'estacional (semideciduo a deciduo)' a las clases 1322-1334 y 8132-8133 porque compartían clima con sus pares estacionales. Desde que R26 limitó el régimen seco a la zona seca del país (scripts/72: PET/P de Holdridge >= 1,0 o bajo 800 m con 5 o más meses secos), esas clases solo quedan en la zona seca, por lo que el geovisor usa los nombres y colores oficiales de la entrega R26 (Inventario_clases_nacionales_R26.csv y Mapa_Ecosistemas_R26_30m.qml). Para reintroducir un ajuste, añadir aquí 'codigo': 'nombre' y 'colores'."
 }
