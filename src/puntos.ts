@@ -1,7 +1,9 @@
 // Capa de los 1,228 puntos de referencia del mapa 2026 (campo 2026 y fuentes secundarias), en seis grupos de fuentes.
 // Un clic sobre un punto muestra su tabla de atributos; los puntos de campo enlazan a su ficha técnica (PDF).
 import type { ExpressionSpecification, Map as MapaML, MapGeoJSONFeature, PointLike } from "maplibre-gl";
-import { url } from "./datos";
+import { url, type Catalogo } from "./datos";
+import { nombreGET } from "./leyenda";
+import { enlazarGET } from "./fichas";
 
 const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
 
@@ -156,34 +158,28 @@ export function puntoEn(m: MapaML, p: PointLike): MapGeoJSONFeature | undefined 
   return m.queryRenderedFeatures([[x - r, y - r], [x + r, y + r]], { layers: ["puntos"] })[0];
 }
 
-const ETIQUETAS: [string, string][] = [
+// Lo que se ve de entrada: dónde y cuándo, qué se observó y qué dice el mapa en ese punto.
+const BASICOS: [string, string][] = [
   ["fuente", "Fuente"],
   ["codigo_sitio", "Código de sitio"],
   ["fecha", "Fecha"],
   ["departamento", "Departamento"],
   ["municipio", "Municipio"],
   ["elev", "Elevación (msnm)"],
-  ["piso", "Estrato de muestreo"],
-  ["ref_original", "Clase original de la referencia"],
+  ["piso", "Piso altitudinal"],
+];
+// Detalle de la homologación (desplegable): las listas de candidatos GET son inferencias, no observaciones.
+const DETALLE: [string, string][] = [
   ["ref_homologada", "Clase homologada (referencia)"],
-  ["mapa_clase", "Clase del mapa en el punto"],
   ["mapa_homologada", "Clase homologada (mapa)"],
-  ["grupo_ref", "Grupo nacional (referencia)"],
-  ["grupo_mapa", "Grupo nacional (mapa)"],
   ["bioma_ref", "Bioma operativo (referencia)"],
   ["bioma_mapa", "Bioma operativo (mapa)"],
-  ["get1_ref", "GET L1 · reino (referencia)"],
-  ["get1_mapa", "GET L1 · reino (mapa)"],
-  ["get2_ref", "GET L2 · bioma (referencia)"],
-  ["get2_mapa", "GET L2 · bioma (mapa)"],
-  ["get3_ref", "GET L3 · EFG (referencia)"],
-  ["get3_mapa", "GET L3 · EFG (mapa)"],
   ["evidencia", "Evidencia archivada"],
   ["estado", "Estado de la referencia"],
-  ["resultado_get", "Resultado GET de la referencia"],
   ["regla", "Regla aplicada"],
+  ["resultado_get", "Resultado GET de la referencia"],
   ["codigos_compatibles", "Códigos nacionales compatibles"],
-  ["efg_candidatos", "EFG candidatos"],
+  ["efg_candidatos", "EFG candidatos de la referencia"],
 ];
 
 const valor = (k: string, v: unknown) => {
@@ -192,23 +188,43 @@ const valor = (k: string, v: unknown) => {
   return s.includes(" | ") ? s.split(" | ").map(esc).join("<br>") : esc(s);
 };
 
-/** Contenido del popup de un punto: encabezado, botón de ficha de campo y tabla de atributos. */
-export function htmlPunto(f: MapGeoJSONFeature): string {
+const hay = (v: unknown) => v !== undefined && v !== null && v !== "";
+const fila = (et: string, html: string) => `<tr><th>${et}</th><td>${html}</td></tr>`;
+const filas = (p: Record<string, unknown>, ets: [string, string][]) =>
+  ets.filter(([k]) => hay(p[k])).map(([k, et]) => fila(et, valor(k, p[k]))).join("");
+
+/** Contenido del popup de un punto: lo observado, la clase del mapa con su grupo GET principal y, plegado, el detalle de la homologación. */
+export function htmlPunto(f: MapGeoJSONFeature, cat?: Catalogo): string {
   const p = f.properties as Record<string, unknown>;
   const [lon, lat] = (f.geometry as GeoJSON.Point).coordinates;
   const g = GRUPOS.find((x) => x.id === p.grupo) ?? GRUPOS[1];
-  const filas = ETIQUETAS.filter(([k]) => p[k] !== undefined && p[k] !== null && p[k] !== "")
-    .map(([k, et]) => `<tr><th>${et}</th><td>${valor(k, p[k])}</td></tr>`)
-    .join("");
-  const ficha =
-    p.tipo === "campo"
-      ? `<a class="btn primario pt-ficha" href="${url(`puntos/fichas/${encodeURIComponent(String(p.id))}.pdf`)}" target="_blank" rel="noopener">Abrir ficha de campo (PDF)</a>`
-      : "";
-  return `<div class="pt-cab"><img src="${dibujar(g, 18).toDataURL()}" alt="" width="18" height="18"><div><b>Punto ${esc(String(p.id))}</b>
+  const campo = p.tipo === "campo";
+  const claseMapa = cat?.clases.find((c) => c.nombre === p.mapa_clase);
+  const efg = claseMapa && !["MULT", "SIN_GET"].includes(claseMapa.get3) ? `${claseMapa.get3} ${esc(nombreGET(cat!, 2, claseMapa.get3))}` : "";
+  const coincide = hay(p.grupo_ref) && hay(p.grupo_mapa) ? (p.grupo_ref === p.grupo_mapa ? "Sí, mismo grupo nacional" : "No, grupo nacional distinto") : "";
+  const principal =
+    filas(p, BASICOS) +
+    (hay(p.ref_original) ? fila(campo ? "Clase observada en campo" : "Clase de la referencia", valor("ref_original", p.ref_original)) : "") +
+    (hay(p.grupo_ref) ? fila("Grupo nacional observado", valor("grupo_ref", p.grupo_ref)) : "") +
+    (hay(p.mapa_clase) ? fila("Clase del mapa en el punto", (claseMapa ? `${claseMapa.codigo} ` : "") + valor("mapa_clase", p.mapa_clase)) : "") +
+    (efg ? fila("Grupo GET-UICN del mapa", efg) : "") +
+    (coincide ? fila("Concordancia", coincide) : "");
+  const detalle = filas(p, DETALLE);
+  const ficha = campo
+    ? `<a class="btn primario pt-ficha" href="${url(`puntos/fichas/${encodeURIComponent(String(p.id))}.pdf`)}" target="_blank" rel="noopener">Abrir ficha de campo (PDF)</a>`
+    : "";
+  return enlazarGET(`<div class="pt-cab"><img src="${dibujar(g, 18).toDataURL()}" alt="" width="18" height="18"><div><b>Punto ${esc(String(p.id))}</b>
       <small>${esc(g.nombre)} · ${lat.toFixed(5)}, ${lon.toFixed(5)}</small></div></div>
     ${ficha}
-    <div class="pt-tabla-c"><table class="pop-criterios pt-tabla"><tbody>${filas}</tbody></table></div>
-    <p class="pt-nota">Fuente: Puntos de referencia y superficies jerárquicas del Mapa de Ecosistemas 2026 (1,228 registros).${p.tipo === "campo" ? " Ficha: Anexo 1 del Producto 3, validación de campo 2026." : ""}</p>`;
+    <div class="pt-tabla-c"><table class="pop-criterios pt-tabla"><tbody>${principal}</tbody></table>
+    ${
+      detalle
+        ? `<details class="pt-detalle"><summary>Detalle de la homologación</summary>
+      <p class="pt-nota">Los EFG candidatos son las opciones GET compatibles con la clase registrada por la fuente (inferencia), no observaciones de campo.</p>
+      <table class="pop-criterios pt-tabla"><tbody>${detalle}</tbody></table></details>`
+        : ""
+    }</div>
+    <p class="pt-nota">Fuente: Puntos de referencia y superficies jerárquicas del Mapa de Ecosistemas 2026 (1,228 registros).${campo ? " Ficha: Anexo 1 del Producto 3, validación de campo 2026." : ""}</p>`);
 }
 
 /** Botón «Puntos de referencia» con el filtro por fuente. */

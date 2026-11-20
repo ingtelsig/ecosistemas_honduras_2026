@@ -347,6 +347,8 @@ summary .nom .mult-incl { display: inline; margin-left: 3px; }
 .pt-ficha { display: block; text-align: center; margin: 8px 0 4px; text-decoration: none; }
 .pt-tabla-c { max-height: 260px; overflow: auto; margin-top: 4px; }
 .pt-tabla th { width: 42%; }
+.pt-detalle { margin-top: 6px; font-size: 12px; }
+.pt-detalle summary { cursor: pointer; color: var(--gris); }
 .pt-nota { font-size: 11px; color: var(--gris); margin: 6px 0 0; }
 /* Información de cada capa de comparación */
 .cmp-fila { display: flex; align-items: center; gap: 4px; }

@@ -510,7 +510,7 @@ function enlazarEventos() {
     const pt = puntoEn(m, e.point);
     if (pt) {
       popup?.remove();
-      popup = new maplibregl.Popup({ maxWidth: "min(360px, calc(100vw - 24px))", className: "pop-punto" }).setLngLat((pt.geometry as GeoJSON.Point).coordinates as [number, number]).setHTML(htmlPunto(pt)).addTo(m);
+      popup = new maplibregl.Popup({ maxWidth: "min(360px, calc(100vw - 24px))", className: "pop-punto" }).setLngLat((pt.geometry as GeoJSON.Point).coordinates as [number, number]).setHTML(htmlPunto(pt, E.cat)).addTo(m);
       return;
     }
     const [cod, f] = await Promise.all([
